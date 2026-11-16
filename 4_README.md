@@ -64,7 +64,20 @@ e olhando a data:
 
 ## Decisões técnicas
 
-<!-- DECISOES -->
+| Decisão | Escolha | Por quê (número que sustenta) |
+|---|---|---|
+| Chunking | `RecursiveCharacterTextSplitter`, 1.000 caracteres, sobreposição de 150, cabeçalho `[doc_id · título · data]` em cada fragmento | Comparado com 500/0 pelo teste de evidência (seção 1): B recupera a evidência em 7/8 perguntas (MRR 0,531), A em 6/8 (MRR 0,456). Com 500 caracteres a regra e a exceção vão para fragmentos diferentes |
+| Busca | Híbrida: BM25 + vetorial, fundidas por Reciprocal Rank Fusion | Vetorial: 7/8, MRR 0,531. Híbrida: 8/8, MRR 0,729 (seção 2). O BM25 recupera o que depende de palavra exata: artigo, código de ponto, "sábado" |
+| k do retriever | 5 | Testado com as 8 perguntas e mais 6 paráfrases: k=4 recupera 12/14 evidências, k=5 recupera 13/14 e k=6 não ganha nada, só aumenta o contexto (3,8 mil → 4,7 mil → 5,6 mil caracteres) |
+| Embeddings | `nomic-embed-text` com prefixos `search_document:` / `search_query:` | Roda grátis no Ollama local do Colab (a Ollama Cloud não serve embeddings) |
+| Distância | Cosseno no ChromaDB | Medida limitada de 0 a 2, legível na tabela de busca com score |
+| Limite de confiança | Distância mínima > `LIMIAR_DISTANCIA` → "não sei" sem chamar o modelo; abaixo disso, regra 5 do prompt | Medimos que a distância **não separa** sozinha as perguntas do domínio das de fora (as faixas se sobrepõem). Por isso o limiar fica acima da maior distância do domínio e serve só como rede de segurança |
+| Conflito entre documentos | Data de publicação no cabeçalho do trecho e regra "vale o mais recente, avise sobre o desatualizado" | É a armadilha da base: doc_06 × doc_04 e doc_02 × doc_03 |
+| Modelo gerador | `gemma4:cloud`, temperature 0 | Modelo usado nas aulas (Ollama Cloud, sem API paga), resposta determinística para a avaliação |
+| Juiz do RAGAS | `gpt-oss:120b`, temperature 0, com `llm=` e `embeddings=` explícitos | Juiz forte e de outra família que não o gerador, para o modelo não avaliar a si mesmo |
+| Agente | ReAct (`create_react_agent` + `AgentExecutor`), `max_iterations=6`, contador de chamadas | O trace thought → action → observation é a evidência pedida; o limite evita loop |
+| Tools | Leem um cadastro operacional transcrito dos documentos, com o `doc_id` de origem | O LLM decide **quando** chamar; o código decide **o que** a tool devolve (horário, situação do ponto, direito à gratuidade) |
+| Guardrails | Regras determinísticas primeiro, classificador LLM para paráfrases | A Sprint 3 mostrou que regra só por palavra-chave não pega variação; a bateria do notebook (24 sondas) e a sonda nova (`ferramentas/sondar_guardrails.py`, 34 sondas) medem isso |
 
 ## Prints
 
@@ -105,7 +118,18 @@ jupyter nbconvert --to notebook --execute 1_Notebook_GS2026_2.ipynb
 
 ## Limitações
 
-<!-- LIMITACOES -->
+- **Base pequena e simulada:** 6 documentos de um município fictício. Em produção, a base viria das publicações reais
+  (diário oficial, GTFS da operadora), com ingestão automática e controle de versão de cada portaria.
+- **Datas por regra fixa:** as tools usam o calendário de feriados nacionais de 2026 e as vigências transcritas; feriado
+  municipal ou alteração emergencial só entram quando forem publicados e transcritos.
+- **Sem tempo real:** o horário é o programado (quadro + portaria), não a posição do ônibus. Integração com GPS/GTFS-RT
+  ficou fora do escopo.
+- **Classificador do guardrail usa o LLM:** uma chamada a mais por pergunta e dependência da disponibilidade da Ollama Cloud.
+  Se o classificador falhar, as regras determinísticas e o limite de confiança continuam valendo.
+- **Embeddings em português:** o `nomic-embed-text` aproxima pouco as distâncias em português; a busca híbrida compensa,
+  mas um modelo de embeddings multilíngue melhoraria o limite de confiança.
+- **LGPD em produção:** o sistema não guarda pergunta com dado pessoal nem identifica autores de relatos, mas um ambiente
+  real precisaria de política de retenção de logs, base legal do tratamento e encarregado de dados (DPO).
 
 ## Segurança da chave
 
