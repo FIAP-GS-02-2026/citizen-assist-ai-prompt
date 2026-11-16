@@ -969,10 +969,18 @@ class ParserReActTolerante(ReActSingleInputOutputParser):
             raise
 
 class ContadorDeChamadas(BaseCallbackHandler):
+    """Conta chamadas de ferramenta, chamadas ao LLM e tokens (para o custo medido no README)."""
     def __init__(self):
-        self.chamadas = 0
+        self.chamadas, self.chamadas_llm, self.tokens_entrada, self.tokens_saida = 0, 0, 0, 0
     def on_tool_start(self, serialized, input_str, **kwargs):
         self.chamadas += 1
+    def on_llm_end(self, response, **kwargs):
+        self.chamadas_llm += 1
+        for geracoes in response.generations:
+            for g in geracoes:
+                uso = getattr(getattr(g, "message", None), "usage_metadata", None) or {}
+                self.tokens_entrada += uso.get("input_tokens", 0)
+                self.tokens_saida += uso.get("output_tokens", 0)
 
 def criar_executor() -> AgentExecutor:
     """O prompt recebe a data de hoje (as tools trabalham com 'hoje', 'domingo', 'este sábado')."""
@@ -990,7 +998,8 @@ def rodar_agente(pergunta: str) -> dict:
     passos = [(a, o) for a, o in saida["intermediate_steps"] if a.tool != "_Exception"]
     fontes = sorted(set(re.findall(r"doc_\d{2}", " ".join(str(o) for _, o in passos))))
     return {"pergunta": pergunta, "resposta": saida["output"], "passos": passos, "chamadas": contador.chamadas,
-            "ferramentas": [a.tool for a, _ in passos], "fontes": fontes}
+            "ferramentas": [a.tool for a, _ in passos], "fontes": fontes, "chamadas_llm": contador.chamadas_llm,
+            "tokens": (contador.tokens_entrada, contador.tokens_saida)}
 
 def mostrar_trace(r: dict) -> None:
     print("PERGUNTA:", r["pergunta"], "\n")
@@ -999,7 +1008,8 @@ def mostrar_trace(r: dict) -> None:
         print(f"[{i}] thought     → {pensamento}")
         print(f"    action      → {acao.tool}({acao.tool_input})")
         print(f"    observation → {str(obs)[:400]}")
-    print(f"\nChamadas de ferramenta: {r['chamadas']} (limite {LIMITE_CHAMADAS})")
+    print(f"\nChamadas de ferramenta: {r['chamadas']} (limite {LIMITE_CHAMADAS}) · chamadas ao LLM: {r['chamadas_llm']} · "
+          f"tokens: {r['tokens'][0]} de entrada, {r['tokens'][1]} de saída")
     print("RESPOSTA FINAL:", r["resposta"], "\n" + "=" * 100)
 ''')
 
@@ -1023,6 +1033,15 @@ r3 = rodar_agente("Minha mãe tem 62 anos e usa cadeira de rodas. Ela pode andar
                   "E o ponto da Praça da Matriz está liberado para ela embarcar?")
 mostrar_trace(r3)
 assert len(set(r3["ferramentas"])) >= 2 and r3["chamadas"] <= LIMITE_CHAMADAS
+''')
+
+code(r'''
+# Custo medido: chamadas ao modelo e tokens por pergunta nos 3 traces (+1 chamada do classificador do guardrail).
+custo = pd.DataFrame([{"pergunta": r["pergunta"][:60] + "…", "ferramentas": r["chamadas"], "chamadas ao LLM": r["chamadas_llm"] + 1,
+                       "tokens de entrada": r["tokens"][0], "tokens de saída": r["tokens"][1]} for r in (r1, r2, r3)])
+display(custo)
+print(f"Média por pergunta: {custo['chamadas ao LLM'].mean():.1f} chamadas ao LLM, "
+      f"{custo['tokens de entrada'].mean():.0f} tokens de entrada e {custo['tokens de saída'].mean():.0f} de saída.")
 ''')
 
 # =====================================================================================
@@ -1124,11 +1143,13 @@ def normalizar(texto: str) -> str:
 PADRAO_DADO_PESSOAL = re.compile(r"\d{3}\.?\d{3}\.?\d{3}-?\d{2}|\(?\d{2}\)?\s?9?\d{4}-?\d{4}|[\w.+-]+@[\w-]+\.\w+|\d{8,}")
 # Pedido de identificação de terceiros (LGPD).
 PADRAO_LGPD = re.compile(
-    r"(quem|quais|qual|nome|nomes|lista|cpf|telefone|endereco|e-?mail|contato|dados)\b.{0,40}"
-    r"(morador|moradores|cidadao|cidadaos|pessoa|pessoas|passageiro|passageiros|autor|autores|usuario|usuarios"
-    r"|denunci|reclam|relat|vizinh|beneficiari)"
-    r"|(morador|cidadao|pessoa|passageiro|autor|vizinh)\w*.{0,40}(relatou|relataram|reclamou|reclamaram|denunciou|denunciaram|registrou|registraram)"
-    r"|who (reported|complained)|names? of (the )?(residents|citizens|people)")
+    # pede dado ou lista de pessoas: "quais moradores", "nome de quem", "liste os passageiros", "endereço da pessoa"
+    r"\b(quais|nome|nomes|lista|liste|listar|relacione|identifique|identidade|cpf|telefone|endereco|e-?mail|contato|dados)\b"
+    r".{0,40}\b(morador|moradores|cidadao|cidadaos|pessoa|pessoas|passageiro|passageiros|autor|autores|usuario|usuarios"
+    r"|vizinho|vizinhos|beneficiario|beneficiarios|quem)\b"
+    # "quem relatou/reclamou/denunciou?" (mas não "quem relatou foi atendido?", que não pede identidade)
+    r"|\bquem (relat|reclam|denunci|registr|mand|envi)\w*(?![^?.!]*\b(foi|sera|vai|recebeu|teve|tem|ja)\b)"
+    r"|who (reported|complained)|names? of (the )?(residents|citizens|people|passengers)")
 # Tentativa de mudar o comportamento do assistente.
 PADRAO_ATAQUE = re.compile(
     r"(ignor|desconsider|esquec|esqueca|burl)\w*.{0,30}(instruc|regra|orientac|prompt|anterior)"
@@ -1136,11 +1157,11 @@ PADRAO_ATAQUE = re.compile(
     r"|(finja|fingir|aja como|atue como|voce agora e|a partir de agora voce|roleplay|jailbreak|\bdan\b)"
     r"|ignore (all|any|the|previous|prior)|disregard|you are now|act as|pretend"
     r"|diga que o ponto (esta|ta) (aberto|liberado|funcionando)|responda (sempre|so) que")
+# Termos fortes de transporte: só eles desfazem um "FORA" do classificador (proteção contra falso positivo).
 DOMINIO = re.compile(
-    r"onibus|linha|714|ponto|parada|terminal|horario|itinerario|trajeto|percurso|tarifa|passagem|gratuid|de graca"
-    r"|gratis|cartao|bilhete|idos|gestant|deficien|cadeira de rodas|cadeirante|acessib|elevador|porta a porta|aurora"
-    r"|matriz|acacias|primavera|ipes|ubs|semob|cob|portaria|decreto|comunicado|transporte|mobilidade|embarc|desembarc"
-    r"|frota|motorista|interdi|obra|desvio|feriado|domingo|sabado")
+    r"onibus|\blinha\b|714|ponto de onibus|\bponto p-?7|\bp-?7\d\d|parada|itinerario|tarifa|passagem|gratuid|de graca"
+    r"|cartao aurora|bilhete|cadeira de rodas|cadeirante|elevador|porta a porta|plataforma|embarc|desembarc|semob"
+    r"|portaria|transporte coletivo|acacias|matriz|primavera|ipes|monte verde|terminal central|interdi|desvio|obra")
 
 CLASSIFICADOR = """Classifique a mensagem de um cidadão enviada ao assistente de TRANSPORTE COLETIVO (ônibus municipal,
 linhas, horários, pontos, acessibilidade e gratuidades) da prefeitura. Responda só com uma palavra:
