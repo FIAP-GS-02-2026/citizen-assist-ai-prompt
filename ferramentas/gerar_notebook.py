@@ -1316,7 +1316,8 @@ md("""
 
 **Conjunto:** 8 perguntas, 4 de nível 1 (simples) e 4 de nível 2 (armadilha: faixa condicional, desatualização por
 portaria, contradição entre documentos e detalhe escondido no meio do texto). O **ground truth foi escrito à mão pelo
-grupo** em `avaliacao/ground_truth.md` e é carregado abaixo.
+grupo** em `avaliacao/ground_truth.md` e copiado sem alteração para a célula abaixo (assim o notebook roda sozinho,
+inclusive a partir do ZIP).
 
 **Juiz e embeddings configurados explicitamente:** `llm=` com o `gpt-oss:120b` (Ollama Cloud, temperature 0) e
 `embeddings=` com o `nomic-embed-text`. Métricas: `faithfulness`, `answer_relevancy` (`ResponseRelevancy`),
@@ -1327,29 +1328,37 @@ mesmas 8 perguntas: chunking A × B (seção 1), busca vetorial × híbrida (se�
 8 trechos e um LLM reordena para ficar com os 4 mais úteis).
 """)
 
-code(r'''
-def carregar_ground_truth(caminho: Path) -> list:
-    texto = caminho.read_text(encoding="utf-8")
+def ler_ground_truth() -> list:
+    """Lê avaliacao/ground_truth.md (escrito à mão pelo grupo) e devolve as 8 perguntas com a resposta, sem alterar o texto."""
+    import re as _re
+    texto = (RAIZ / "avaliacao" / "ground_truth.md").read_text(encoding="utf-8")
     itens = []
-    for bloco in re.split(r"\n## ", texto)[1:]:
-        cab = re.match(r"(P\d) · nível (\d)", bloco)
+    for bloco in _re.split(r"\n## ", texto)[1:]:
+        cab = _re.match(r"(P\d) · nível (\d)", bloco)
         if not cab:
-            continue   # seção de instruções do arquivo
-        pergunta = re.search(r"\*\*Pergunta:\*\*\s*(.+)", bloco).group(1).strip()
-        resposta = re.search(r"\*\*Resposta correta:\*\*(.*?)\*\*Escrito por:\*\*", bloco, re.S).group(1).strip()
-        autor = re.search(r"\*\*Escrito por:\*\*(.*?)(?:\n---|\Z)", bloco, re.S).group(1).strip()
-        itens.append({"id": cab.group(1), "nivel": int(cab.group(2)), "pergunta": pergunta,
-                      "ground_truth": resposta, "escrito_por": autor})
+            continue
+        itens.append({
+            "id": cab.group(1), "nivel": int(cab.group(2)),
+            "pergunta": _re.search(r"\*\*Pergunta:\*\*\s*(.+)", bloco).group(1).strip(),
+            "ground_truth": _re.search(r"\*\*Resposta correta:\*\*(.*?)\*\*Escrito por:\*\*", bloco, _re.S).group(1).strip(),
+            "escrito_por": _re.search(r"\*\*Escrito por:\*\*(.*?)(?:\n---|\Z)", bloco, _re.S).group(1).strip(),
+        })
     return itens
 
-CAMINHO_GT = PASTA_BASE.parent / "avaliacao" / "ground_truth.md"
-conjunto = carregar_ground_truth(CAMINHO_GT)
+
+CONJUNTO = ler_ground_truth()
+linhas_conjunto = ",\n".join("    " + repr(c) for c in CONJUNTO)
+code(f"""
+# Conjunto de avaliação: 8 perguntas com o ground truth escrito à mão pelo grupo (copiado de avaliacao/ground_truth.md).
+conjunto = [
+{linhas_conjunto},
+]
 faltando = [c["id"] for c in conjunto if not c["ground_truth"]]
 assert len(conjunto) == 8 and sum(c["nivel"] == 1 for c in conjunto) == 4, "o conjunto precisa ter 8 perguntas, 4 + 4"
-assert not faltando, f"ground truth ainda não escrito pelo grupo: {faltando}"
+assert not faltando, f"ground truth ainda não escrito pelo grupo: {{faltando}}"
 assert all(c["pergunta"] == PERGUNTAS_TESTE[c["id"]] for c in conjunto), "perguntas diferentes das da seção 1"
 display(pd.DataFrame(conjunto))
-''')
+""")
 
 code(r'''
 from ragas import EvaluationDataset, evaluate
