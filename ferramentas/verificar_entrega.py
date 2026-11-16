@@ -207,9 +207,15 @@ def verificar(alvo: Path) -> list:
 
     # ---- Segredos -----------------------------------------------------------------------------------
     padrao = re.compile(r"\b[0-9a-f]{32}\.[A-Za-z0-9_-]{16,}\b")
-    vazou = [n for n in f.nomes() if not n.endswith("/") and not n.startswith(".env") and padrao.search(f.ler(n))]
+    vazou = [n for n in f.nomes() if not n.endswith("/") and not Path(n).name.startswith(".env")
+             and ".venv" not in n and padrao.search(f.ler(n))]
     item(1, "nenhuma chave de API em nenhum arquivo", not vazou, ", ".join(vazou))
-    item(1, "nenhum .env na entrega", not any(Path(n).name.startswith(".env") for n in f.nomes()))
+    if f.zip:
+        item(1, "nenhum .env na entrega", not any(Path(n).name.startswith(".env") for n in f.nomes()))
+    else:
+        import subprocess
+        versionados = subprocess.run(["git", "-C", str(alvo), "ls-files"], capture_output=True, text=True).stdout.split()
+        item(1, "nenhum .env versionado no repositório", not any(Path(n).name.startswith(".env") for n in versionados))
     return res
 
 

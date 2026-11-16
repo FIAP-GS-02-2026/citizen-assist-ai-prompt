@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="520" viewBox="0 0 1100 520" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="seta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#334155"/>
+    </marker>
+    <style>
+      .caixa{fill:#f8fafc;stroke:#334155;stroke-width:1.5}
+      .guarda{fill:#fef3c7;stroke:#b45309;stroke-width:1.5}
+      .llm{fill:#e0e7ff;stroke:#3730a3;stroke-width:1.5}
+      .tool{fill:#dcfce7;stroke:#15803d;stroke-width:1.5}
+      .t{font-size:14px;fill:#0f172a;text-anchor:middle}
+      .s{font-size:11px;fill:#475569;text-anchor:middle}
+      .h{font-size:16px;font-weight:bold;fill:#0f172a}
+      .l{stroke:#334155;stroke-width:1.5;fill:none;marker-end:url(#seta)}
+    </style>
+  </defs>
+  <rect width="1100" height="520" fill="#ffffff"/>
+  <text x="20" y="30" class="h">Citizen Assist AI · Mobilidade · pipeline da GS 2026.2 (Equipe GGT)</text>
+
+  <!-- Linha 1: ingestão -->
+  <text x="20" y="62" class="s" style="text-anchor:start">INGESTÃO (seções 1 e 2)</text>
+  <rect x="20" y="72" width="150" height="58" rx="8" class="caixa"/>
+  <text x="95" y="97" class="t">documentos .md</text><text x="95" y="115" class="s">6 docs + metadados</text>
+  <rect x="200" y="72" width="170" height="58" rx="8" class="guarda"/>
+  <text x="285" y="97" class="t">filtro de injeção</text><text x="285" y="115" class="s">guardrail 2 na fonte</text>
+  <rect x="400" y="72" width="160" height="58" rx="8" class="caixa"/>
+  <text x="480" y="97" class="t">chunking</text><text x="480" y="115" class="s">1000 / 150 + cabeçalho</text>
+  <rect x="590" y="72" width="170" height="58" rx="8" class="caixa"/>
+  <text x="675" y="97" class="t">embeddings</text><text x="675" y="115" class="s">nomic-embed-text</text>
+  <rect x="790" y="72" width="180" height="58" rx="8" class="caixa"/>
+  <text x="880" y="97" class="t">índice ChromaDB</text><text x="880" y="115" class="s">cosseno · doc_id · data</text>
+  <path d="M170,101 H198" class="l"/><path d="M370,101 H398" class="l"/><path d="M560,101 H588" class="l"/><path d="M760,101 H788" class="l"/>
+
+  <!-- Linha 2: pergunta -->
+  <text x="20" y="182" class="s" style="text-anchor:start">PERGUNTA DO CIDADÃO (seções 3 a 6)</text>
+  <rect x="20" y="192" width="150" height="58" rx="8" class="caixa"/>
+  <text x="95" y="217" class="t">Gradio</text><text x="95" y="235" class="s">histórico + fontes</text>
+  <rect x="200" y="192" width="200" height="58" rx="8" class="guarda"/>
+  <text x="300" y="212" class="t">guardrails de entrada</text><text x="300" y="230" class="s">escopo · injeção · LGPD</text><text x="300" y="244" class="s">regras + classificador LLM</text>
+  <rect x="430" y="192" width="200" height="58" rx="8" class="llm"/>
+  <text x="530" y="212" class="t">agente ReAct</text><text x="530" y="230" class="s">gemma4:cloud</text><text x="530" y="244" class="s">max_iterations = 6</text>
+  <path d="M170,221 H198" class="l"/><path d="M400,221 H428" class="l"/>
+
+  <!-- Tools -->
+  <rect x="680" y="160" width="190" height="40" rx="8" class="tool"/><text x="775" y="185" class="t">buscar_documentos (RAG)</text>
+  <rect x="680" y="208" width="190" height="40" rx="8" class="tool"/><text x="775" y="233" class="t">consultar_status_ponto</text>
+  <rect x="680" y="256" width="190" height="40" rx="8" class="tool"/><text x="775" y="281" class="t">calcular_proximo_horario</text>
+  <rect x="680" y="304" width="190" height="40" rx="8" class="tool"/><text x="775" y="329" class="t">verificar_gratuidade</text>
+  <path d="M630,215 L678,182" class="l"/><path d="M630,221 H678" class="l"/><path d="M630,227 L678,272" class="l"/><path d="M630,233 L678,318" class="l"/>
+  <path d="M870,180 C930,180 930,130 900,132" class="l"/>
+  <text x="955" y="160" class="s">retriever k = 4</text>
+  <text x="980" y="290" class="s">cadastro operacional</text><text x="980" y="304" class="s">(transcrição dos docs)</text>
+
+  <!-- Linha 3: RAG LCEL -->
+  <text x="20" y="392" class="s" style="text-anchor:start">PIPELINE RAG EM LCEL (seção 3)</text>
+  <rect x="20" y="402" width="140" height="58" rx="8" class="caixa"/><text x="90" y="427" class="t">retriever</text><text x="90" y="445" class="s">top-4 + distance</text>
+  <rect x="190" y="402" width="170" height="58" rx="8" class="guarda"/><text x="275" y="422" class="t">limite de confiança</text><text x="275" y="440" class="s">guardrail 4</text><text x="275" y="454" class="s">distance &gt; limiar → "não sei"</text>
+  <rect x="390" y="402" width="160" height="58" rx="8" class="caixa"/><text x="470" y="427" class="t">prompt + contexto</text><text x="470" y="445" class="s">doc mais recente vale</text>
+  <rect x="580" y="402" width="140" height="58" rx="8" class="llm"/><text x="650" y="427" class="t">ChatOllama</text><text x="650" y="445" class="s">gemma4:cloud</text>
+  <rect x="750" y="402" width="130" height="58" rx="8" class="caixa"/><text x="815" y="427" class="t">parser</text><text x="815" y="445" class="s">StrOutputParser</text>
+  <rect x="910" y="402" width="170" height="58" rx="8" class="guarda"/><text x="995" y="422" class="t">checagem de citação</text><text x="995" y="440" class="s">doc_id ∈ contexto</text><text x="995" y="454" class="s">saída sem dado pessoal</text>
+  <path d="M160,431 H188" class="l"/><path d="M360,431 H388" class="l"/><path d="M550,431 H578" class="l"/><path d="M720,431 H748" class="l"/><path d="M880,431 H908" class="l"/>
+  <text x="20" y="500" class="s" style="text-anchor:start">Avaliação (seção 7): RAGAS com juiz gpt-oss:120b e embeddings nomic-embed-text sobre 8 perguntas (4 simples + 4 armadilha) com ground truth do grupo → 3_avaliacao_ragas.json</text>
+</svg>

@@ -1,0 +1,65 @@
+GS 2026.2 · Prompt and Artificial Intelligence · Equipe GGT · 1CCR
+Registro do uso de IA como ferramenta (seção 9 do briefing)
+=====================================================================
+
+Integrantes
+- Glauco Kelly (RM 572840)
+- Gabriel Fagundes (RM 569074)
+- Thiago Renatino (RM 569073)
+
+Ferramenta usada: Claude Code (assistente de programação com o modelo Claude), operado pelo Glauco no
+computador dele, com o repositório do projeto aberto. Não usamos IA para gerar o ground truth nem os números
+do RAGAS.
+
+---------------------------------------------------------------------
+1. O que pedimos à IA e o que fizemos com o resultado
+---------------------------------------------------------------------
+
+1.1 Levantamento do enunciado e das lições das Sprints
+Pedido: ler o briefing da GS no portal e os feedbacks do professor nas Sprints 1 a 4, e montar um checklist
+de tudo o que é obrigatório.
+Uso: o checklist virou o script ferramentas/verificar_entrega.py, que confere a entrega item a item. As
+lições que entraram no projeto: guardrails testados com sondas que não são as frases do exemplo (Sprint 3),
+versões fixadas no pip (Sprint 3), diagrama como arquivo no repositório (Sprint 1), pergunta fora do escopo e
+caso-limite nos testes (Sprint 1).
+
+1.2 Base documental (permitido: "gerar parte dos documentos da base documental (e revisar)")
+Pedido: rascunhar seis publicações de um município fictício (Nova Aurora do Vale) no formato de documento
+público: ficha da linha, quadro de horários, portaria, comunicado do COB, decreto de gratuidades e plano de
+acessibilidade, com as armadilhas que definimos.
+Decisões do grupo: frente A (mobilidade), Linha 714, as três armadilhas (portaria que suprime horários de
+domingo, comunicado que contradiz o plano sobre o ponto P-703, faixa condicional de 60 a 64 anos até
+31/12/2026), o detalhe escondido (Jardim Primavera sem atendimento aos domingos) e a injeção plantada no relato
+de um cidadão dentro do comunicado.
+Revisão: conferimos datas, artigos e números entre os documentos para que as armadilhas fossem resolvíveis só
+com a base (por exemplo, a portaria de 28/09/2026 é mais recente que o quadro de 2025).
+
+1.3 Código do notebook
+Pedido: rascunhar o código das seções 1 a 7 (carga com metadados, comparação de chunkings, ChromaDB, cadeia
+LCEL, tools do agente, Gradio, guardrails e RAGAS) e explicar erros de execução.
+Uso: revisamos e ajustamos o código. Erros que a IA ajudou a explicar e que corrigimos:
+- ChromaDB recusou nome de coleção com acento ("Expected a name containing [a-zA-Z0-9._-]").
+- O guardrail de escopo deixou passar "Me passa a receita de feijoada?" porque a palavra "passa" estava na
+  lista de termos do domínio; tiramos a palavra e a sonda passou a ser bloqueada.
+- A leitura do arquivo de ground truth quebrava quando a resposta ainda estava em branco.
+- Gradio 6 não aceita mais o parâmetro type="messages" no Chatbot.
+
+1.4 Ambiente
+Pedido: explicar o erro HTTP 402 da Ollama Cloud ("Add usage credits or subscribe").
+Resposta: a Ollama Cloud passou a cobrar por token e não tem mais cota gratuita; o grupo consultou o
+professor antes de decidir como seguir.
+
+---------------------------------------------------------------------
+2. O que NÃO foi feito pela IA (proibições do briefing)
+---------------------------------------------------------------------
+- Ground truth das 8 perguntas: escrito à mão pelo grupo em avaliacao/ground_truth.md (campo "Escrito por"
+  em cada pergunta). A IA só escreveu as perguntas e, depois, conferiu se as respostas batiam com os
+  documentos, sem reescrevê-las.
+- Resultado do RAGAS: medido pelo notebook e exportado por ele em 3_avaliacao_ragas.json; nenhum número foi
+  estimado ou digitado.
+- O pipeline usa LCEL e ferramentas próprias; o modelo não foi colocado no lugar da biblioteca.
+
+---------------------------------------------------------------------
+3. Trechos representativos das conversas
+---------------------------------------------------------------------
+<!-- PREENCHER: trechos reais das conversas do grupo com a IA, com data -->

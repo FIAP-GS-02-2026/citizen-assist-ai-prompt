@@ -92,7 +92,7 @@ EM_COLAB = "google.colab" in sys.modules
 PACOTES = [
     "langchain==0.3.30", "langchain-core==0.3.86", "langchain-community==0.3.31",
     "langchain-ollama==0.3.10", "langchain-chroma==0.2.6", "langchain-text-splitters==0.3.11",
-    "chromadb==1.5.9", "ollama==0.6.3", "gradio==6.30.0", "ragas==0.4.3", "datasets==5.1.0",
+    "chromadb==1.5.9", "ollama==0.6.3", "rank_bm25==0.2.2", "gradio==6.30.0", "ragas==0.4.3", "datasets==5.1.0",
 ]
 
 if EM_COLAB:
@@ -245,7 +245,7 @@ As duas estratégias usam o `RecursiveCharacterTextSplitter` e o mesmo cabeçalh
 
 **Teste:** para cada uma das 8 perguntas da avaliação (seção 7), sabemos em qual documento e em qual trecho está a
 evidência (por exemplo, "não entra no Jardim Primavera" no doc_01). Contamos se o trecho com a evidência aparece
-entre os `k = 4` fragmentos recuperados. Isso mede só a recuperação, sem LLM.
+entre os `k = 5` fragmentos recuperados (o k é justificado na seção 2). Isso mede só a recuperação, sem LLM.
 """)
 
 code(r'''
@@ -296,7 +296,7 @@ PERGUNTAS_TESTE = {
     "P7": "O ponto da Praça da Matriz está funcionando para quem usa cadeira de rodas? Se não, qual é o ponto acessível mais perto?",
     "P8": "O ônibus 714 passa no Jardim Primavera no domingo?",
 }
-K = 4
+K = 5   # k do retriever: escolhido na seção 2 (busca híbrida) pela evidência recuperada
 
 def indice_temporario(fragmentos, nome):
     cliente = chromadb.EphemeralClient()
@@ -318,7 +318,7 @@ resultado_chunking, detalhe_chunking, fragmentos_por_estrategia = [], {}, {}
 for nome, (tamanho, sobreposicao) in ESTRATEGIAS.items():
     frags = fragmentar(documentos, tamanho, sobreposicao)
     fragmentos_por_estrategia[nome] = frags
-    linhas = testar_recuperacao(indice_temporario(frags, re.sub(r"\W", "_", nome)))
+    linhas = testar_recuperacao(indice_temporario(frags, "chunking_" + nome[0].lower()))
     detalhe_chunking[nome] = linhas
     acertos = [l for l in linhas if isinstance(l["posição"], int)]
     resultado_chunking.append({
@@ -326,7 +326,7 @@ for nome, (tamanho, sobreposicao) in ESTRATEGIAS.items():
         "tamanho médio (caracteres)": round(sum(len(f.page_content) for f in frags) / len(frags)),
         f"evidência no top-{K} (8 perguntas)": f"{len(acertos)}/8",
         "evidência no top-1": sum(1 for l in acertos if l["posição"] == 1),
-        "armadilhas P5–P8 no top-4": f"{sum(1 for l in acertos if l['pergunta'] in ('P5','P6','P7','P8'))}/4",
+        f"armadilhas P5–P8 no top-{K}": f"{sum(1 for l in acertos if l['pergunta'] in ('P5','P6','P7','P8'))}/4",
         "MRR": round(sum(1 / l["posição"] for l in acertos) / 8, 3),
     })
 
@@ -339,7 +339,10 @@ display(pd.DataFrame({nome: [l["posição"] for l in linhas] for nome, linhas in
 md("""
 ### Escolha do chunking
 
-<!-- JUSTIFICATIVA_CHUNKING -->
+**Escolhemos B (1.000 caracteres, sobreposição de 150):** a evidência aparece no top-5 em 7 das 8 perguntas (A: 6/8) e o MRR sobe de 0,456 para 0,531.
+Com 500 caracteres sem sobreposição, a regra e a exceção vão para fragmentos diferentes: o intervalo de 20 minutos (P3) e a interdição do P-703 (P7) não voltam.
+Os documentos têm cerca de 2.000 caracteres, então B guarda um artigo inteiro, ou uma seção, com o seu contexto e a data no cabeçalho.
+A pergunta que B ainda erra (P5, faixa de 60 a 64 anos) depende de palavra exata, e por isso a seção 2 mede a busca híbrida.
 """)
 
 # =====================================================================================
@@ -371,6 +374,96 @@ print(f"Coleção: {colecao.name} · {colecao.count()} fragmentos · distância:
 amostra = colecao.get(limit=6, include=["metadatas"])
 display(pd.DataFrame([{"id": i, "doc_id": m["doc_id"], "data_publicacao": m["data_publicacao"], "tema": m["tema"],
                        "titulo": m["titulo"]} for i, m in zip(amostra["ids"], amostra["metadatas"])]))
+''')
+
+md("""
+### Busca semântica × busca híbrida
+
+O `nomic-embed-text` aproxima pouco as distâncias em português (perguntas do domínio e de fora ficam na mesma faixa,
+ver seção 3), e parte das evidências depende de palavra exata: número de artigo, código de ponto, "sábado".
+Por isso medimos também a **busca híbrida**: BM25 (palavra-chave) + vetorial, combinadas por *Reciprocal Rank
+Fusion*, com o mesmo teste de evidência da seção 1.
+""")
+
+code(r'''
+from langchain_community.retrievers import BM25Retriever
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.callbacks import CallbackManagerForRetrieverRun
+
+def tokens(texto: str) -> list:
+    return re.findall(r"\w+", texto.lower())
+
+class RetrieverHibrido(BaseRetriever):
+    """BM25 + vetorial com Reciprocal Rank Fusion. Guarda a distância de cosseno do vetorial em cada trecho."""
+    indice: object
+    bm25: object
+    k: int = 4
+    candidatos: int = 10
+
+    def _get_relevant_documents(self, consulta: str, *, run_manager: CallbackManagerForRetrieverRun = None):
+        # distância de cosseno de TODOS os trechos (a base é pequena), para o limite de confiança
+        todos = self.indice.similarity_search_with_score(consulta, k=self.indice._collection.count())
+        distancia = {d.metadata["chunk_id"]: float(s) for d, s in todos}
+        densos = todos[: self.candidatos]
+        pontos, docs = {}, {}
+        for lista in ([d for d, _ in densos], self.bm25.invoke(consulta)[: self.candidatos]):
+            for pos, d in enumerate(lista):
+                cid = d.metadata["chunk_id"]
+                pontos[cid] = pontos.get(cid, 0) + 1 / (60 + pos + 1)
+                docs[cid] = d
+        saida = []
+        for cid in sorted(pontos, key=pontos.get, reverse=True)[: self.k]:
+            d = Document(page_content=docs[cid].page_content, metadata=dict(docs[cid].metadata))
+            d.metadata["distance"] = round(distancia[cid], 4)
+            saida.append(d)
+        return saida
+
+def criar_hibrido(indice, frags, k=K):
+    bm25 = BM25Retriever.from_documents(frags, preprocess_func=tokens)
+    bm25.k = 10
+    return RetrieverHibrido(indice=indice, bm25=bm25, k=k)
+
+def testar_hibrido(ret):
+    linhas = []
+    for pid, pergunta in PERGUNTAS_TESTE.items():
+        doc_id, frase = EVIDENCIAS[pid]
+        achados = ret.invoke(pergunta)
+        pos = next((i + 1 for i, d in enumerate(achados)
+                    if d.metadata["doc_id"] == doc_id and frase.lower() in d.page_content.lower()), None)
+        linhas.append(pos)
+    return linhas
+
+# Paráfrases que NÃO estão na avaliação: o cidadão não usa as palavras do documento.
+PARAFRASES = {
+    "X1": ("Quais documentos uma pessoa de 65 anos ou mais precisa apresentar para não pagar o ônibus?", "doc_05", "documento oficial com foto"),
+    "X2": ("Acompanhante de deficiente paga?", "doc_05", "com acompanhante"),
+    "X3": ("Tem ônibus com elevador no domingo?", "doc_06", "exclusivamente com veículos equipados"),
+    "X4": ("Onde fica o ponto provisório da Rua dos Ipês?", "doc_03", "Av. dos Ipês, 85"),
+    "X5": ("grávida anda de graça até quando depois do parto?", "doc_05", "90 (noventa) dias"),
+    "X6": ("o 714 para no mercado municipal?", "doc_01", "Mercado Municipal"),
+}
+linhas_k = []
+for k in (4, 5, 6):
+    ret_k = criar_hibrido(vectorstore, fragmentos, k=k)
+    achou = 0
+    for pergunta, doc_id, frase in [(PERGUNTAS_TESTE[p], *EVIDENCIAS[p]) for p in PERGUNTAS_TESTE] + list(PARAFRASES.values()):
+        achou += any(d.metadata["doc_id"] == doc_id and frase.lower() in d.page_content.lower() for d in ret_k.invoke(pergunta))
+    contexto = sum(sum(len(d.page_content) for d in ret_k.invoke(q)) for q in PERGUNTAS_TESTE.values()) // 8
+    linhas_k.append({"k (busca híbrida)": k, "evidência recuperada (8 da avaliação + 6 paráfrases)": f"{achou}/14",
+                     "contexto médio (caracteres)": contexto})
+print("Escolha do k:")
+display(pd.DataFrame(linhas_k))
+
+retriever_hibrido = criar_hibrido(vectorstore, fragmentos)
+pos_denso = [l["posição"] for l in testar_recuperacao(vectorstore)]
+pos_hibrido = testar_hibrido(retriever_hibrido)
+resumo = lambda pos: (f"{sum(isinstance(p, int) for p in pos)}/8", round(sum(1 / p for p in pos if isinstance(p, int)) / 8, 3))
+display(pd.DataFrame([
+    {"busca (chunking B, k=5)": "vetorial", "evidência no top-5": resumo(pos_denso)[0], "MRR": resumo(pos_denso)[1],
+     **{pid: p for pid, p in zip(PERGUNTAS_TESTE, pos_denso)}},
+    {"busca (chunking B, k=5)": "híbrida BM25 + vetorial (RRF)", "evidência no top-5": resumo(pos_hibrido)[0],
+     "MRR": resumo(pos_hibrido)[1], **{pid: p or "não recuperada" for pid, p in zip(PERGUNTAS_TESTE, pos_hibrido)}},
+]))
 ''')
 
 code(r'''
@@ -434,42 +527,46 @@ prompt_rag = ChatPromptTemplate.from_messages([
 def formatar_contexto(docs) -> str:
     return "\n\n---\n\n".join(d.page_content for d in docs)
 
-def buscar_com_score(pergunta: str, k: int = K) -> list:
-    """Retriever da cadeia: devolve os k trechos mais próximos com a distância de cosseno no metadado."""
-    docs = []
-    for d, distancia in vectorstore.similarity_search_with_score(pergunta, k=k):
-        d.metadata["distance"] = round(float(distancia), 4)
-        docs.append(d)
-    return docs
+retriever = retriever_hibrido   # busca híbrida da seção 2 (k = 4), usada pela cadeia e pelo agente
 
-retriever = vectorstore.as_retriever(search_kwargs={"k": K})   # mesmo índice, usado pelo agente na seção 4
+def menor_distancia(pergunta: str) -> float:
+    return float(vectorstore.similarity_search_with_score(pergunta, k=1)[0][1])
 ''')
 
 code(r'''
-# Limiar de confiança calibrado: perguntas do domínio × perguntas sem nada a ver com a base.
-def menor_distancia(pergunta: str) -> float:
-    return vectorstore.similarity_search_with_score(pergunta, k=1)[0][1]
-
-fora_da_base = ["Qual a previsão do tempo para amanhã?", "Quem ganhou a Copa do Mundo de 2002?",
-                "Como faço bolo de cenoura?", "Qual é a capital da Austrália?"]
-dist_dominio = [menor_distancia(p) for p in PERGUNTAS_TESTE.values()]
-dist_fora = [menor_distancia(p) for p in fora_da_base]
-LIMIAR_DISTANCIA = round((max(dist_dominio) + min(dist_fora)) / 2, 3)
-print(f"Maior distância entre perguntas do domínio: {max(dist_dominio):.3f}")
-print(f"Menor distância entre perguntas fora da base: {min(dist_fora):.3f}")
-print(f"LIMIAR_DISTANCIA = {LIMIAR_DISTANCIA} (ponto médio; acima disso o modelo não é chamado)")
-assert max(dist_dominio) < min(dist_fora), "as distâncias se sobrepõem: o limiar sozinho não separa os grupos"
+# Limite de confiança (guardrail 4): calibração da distância com perguntas do domínio × perguntas de fora.
+dominio = list(PERGUNTAS_TESTE.values()) + [
+    "O ônibus 714 passa no Jardim Primavera no domingo?", "Minha avó tem 70 anos, ela paga passagem?",
+    "Que horas sai o primeiro ônibus no sábado?", "Quanto custa a passagem do ônibus 714?",
+    "Tem ônibus com elevador no domingo?", "Acompanhante de deficiente paga?", "o 714 para na escola monte verde?"]
+fora = ["Qual a previsão do tempo para amanhã?", "Quem ganhou a Copa do Mundo de 2002?", "Como faço bolo de cenoura?",
+        "Qual é a capital da Austrália?", "Qual o melhor remédio para dor de cabeça?", "Como renovar minha CNH?"]
+dist_dominio = {q: round(menor_distancia(q), 3) for q in dominio}
+dist_fora = {q: round(menor_distancia(q), 3) for q in fora}
+display(pd.DataFrame([{"grupo": "domínio", "pergunta": q, "menor distância": d} for q, d in dist_dominio.items()] +
+                     [{"grupo": "fora da base", "pergunta": q, "menor distância": d} for q, d in dist_fora.items()])
+        .sort_values("menor distância"))
+sobreposicao = max(dist_dominio.values()) >= min(dist_fora.values())
+LIMIAR_DISTANCIA = round(max(dist_dominio.values()) + 0.03, 2)
+print(f"Domínio: até {max(dist_dominio.values()):.3f} · fora da base: a partir de {min(dist_fora.values()):.3f} · "
+      f"sobreposição: {'sim' if sobreposicao else 'não'}")
+print(f"LIMIAR_DISTANCIA = {LIMIAR_DISTANCIA}: rede de segurança acima da maior distância medida no domínio, para "
+      "nunca recusar pergunta legítima. Abaixo dele, o 'não sei' vem do prompt (regra 5) e o fora de escopo, do guardrail 1.")
 ''')
 
 code(r'''
 from langchain_core.runnables import RunnableBranch, RunnableParallel
 
 gerar_resposta = prompt_rag | llm | StrOutputParser()
-fora_do_limite = lambda x: not x["docs"] or x["docs"][0].metadata["distance"] > LIMIAR_DISTANCIA
+fora_do_limite = lambda x: not x["docs"] or min(d.metadata["distance"] for d in x["docs"]) > LIMIAR_DISTANCIA
 
 def conferir_citacoes(x: dict) -> dict:
     """Só vale doc_id que estava no contexto; resposta sem citação recebe os doc_ids recuperados."""
     resposta, recuperados = x["resposta"].strip(), {d.metadata["doc_id"] for d in x["docs"]}
+    if NAO_SEI[:40] in resposta:   # "não sei" não cita fonte: nada foi afirmado a partir dos trechos
+        resposta = re.sub(r"\s*\[doc_\d{2}(?:,\s*doc_\d{2})*\]", "", resposta)
+        return {**x, "resposta": resposta, "fontes": [], "citacoes_invalidas_removidas": [],
+                "contextos": [d.page_content for d in x["docs"]]}
     citados = set(re.findall(r"doc_\d{2}", resposta))
     invalidos = sorted(citados - recuperados)
     for c in invalidos:
@@ -487,7 +584,7 @@ def conferir_citacoes(x: dict) -> dict:
 
 # Pipeline LCEL completo: retriever → prompt com contexto → ChatOllama → parser (+ limite de confiança e citação)
 cadeia_rag = (
-    RunnableParallel(pergunta=itemgetter("pergunta"), docs=itemgetter("pergunta") | RunnableLambda(buscar_com_score))
+    RunnableParallel(pergunta=itemgetter("pergunta"), docs=itemgetter("pergunta") | retriever)
     | RunnablePassthrough.assign(contexto=lambda x: formatar_contexto(x["docs"]))
     | RunnablePassthrough.assign(resposta=RunnableBranch(
         (fora_do_limite, RunnableLambda(lambda x: f"{NAO_SEI} Procure a {CANAL_OFICIAL}.")),
@@ -500,7 +597,7 @@ def responder_rag(pergunta: str) -> dict:
 
 def mostrar(r: dict) -> None:
     print("Pergunta:", r["pergunta"])
-    print("Distância do trecho mais próximo:", r["docs"][0].metadata["distance"] if r["docs"] else "-")
+    print("Menor distância entre os trechos:", min(d.metadata["distance"] for d in r["docs"]) if r["docs"] else "-")
     print("Resposta:", r["resposta"])
     print("Fontes:", ", ".join(f"{f['doc_id']} ({f['titulo']}, {f['data_publicacao']})" for f in r["fontes"]) or "nenhuma")
     print(AVISO, "\n")
@@ -634,6 +731,8 @@ def _contar():
 def _parametros(entrada: str) -> dict:
     """Aceita JSON ou 'chave=valor, chave=valor' (o ReAct clássico passa um único texto para a tool)."""
     texto = (entrada or "").strip().strip("`").strip()
+    while len(texto) > 1 and texto[0] + texto[-1] in ("()", "''", '""'):   # ('idade=62, ...') ou "ponto=P-703"
+        texto = texto[1:-1].strip()
     if texto.startswith("{"):
         try:
             return {str(k).strip().lower(): str(v).strip() for k, v in json.loads(texto).items()}
@@ -644,8 +743,10 @@ def _parametros(entrada: str) -> dict:
             for p in pares if (m := re.match(r"\s*([a-zA-Z_]+)\s*[=:]\s*(.+?)\s*$", p))}
 
 def _data(valor: str) -> date:
-    if not valor or valor.lower() in ("hoje", "agora"):
+    if not valor or valor.strip().lower() in ("hoje", "agora"):
         return hoje()
+    if valor.strip().lower() in ("amanhã", "amanha"):
+        return hoje() + timedelta(days=1)
     sem_acento = lambda x: "".join(c for c in unicodedata.normalize("NFKD", x.lower()) if not unicodedata.combining(c))
     v = sem_acento(valor)
     for i, nome in enumerate(DIAS):
@@ -665,9 +766,19 @@ def _hora(valor: str) -> str:
         raise ErroDeEntrada(f"hora inválida: '{valor}'. Use HH:MM, por exemplo 19:40.")
     return f"{int(m.group(1)):02d}:{int(m.group(2) or 0):02d}"
 
+APELIDOS = {"terminal": "P-701", "mercado": "P-702", "matriz": "P-703", "provisorio": "P-704A", "av. dos ipes": "P-704A",
+            "rua dos ipes": "P-704", "ubs": "P-705", "posto de saude": "P-705", "escola": "P-706", "monte verde": "P-706",
+            "margaridas": "P-707", "primavera": "P-707", "ponto final": "P-708", "jardim das acacias": "P-708"}
+
 def _ponto(valor: str) -> str:
+    """Aceita o código (P-703, p703, 703) ou o nome do local (Praça da Matriz, UBS Acácias)."""
     codigo = (valor or "").strip().upper().replace(" ", "")
     codigo = re.sub(r"^P?-?(\d{3}A?)$", r"P-\1", codigo)
+    if codigo not in PONTOS:
+        nome = "".join(c for c in unicodedata.normalize("NFKD", (valor or "").lower()) if not unicodedata.combining(c))
+        for apelido, cod in APELIDOS.items():
+            if apelido in nome:
+                return cod
     if codigo not in PONTOS:
         raise ErroDeEntrada(f"o ponto '{valor}' não existe na Linha 714. Pontos válidos: {', '.join(PONTOS)}.")
     return codigo
@@ -681,7 +792,8 @@ def consultar_status_ponto(entrada: str) -> str:
     """Use quando o cidadão perguntar se um ponto de ônibus da Linha 714 está funcionando, interditado, desativado,
     se é acessível para cadeira de rodas, ou qual ponto alternativo usar. NÃO use para horários (use
     calcular_proximo_horario) nem para regras escritas (use buscar_documentos).
-    Entrada: 'ponto=P-703, data=AAAA-MM-DD' (data opcional; padrão: hoje). Aceita data=domingo."""
+    Entrada: 'ponto=P-703, data=domingo'. O ponto pode ser o código (P-703) ou o nome do local (Praça da Matriz,
+    UBS Acácias, Terminal Central). A data é opcional (padrão: hoje) e aceita hoje, amanhã, domingo, sábado..."""
     try:
         _contar()
         p = _parametros(entrada) or {"ponto": entrada}
@@ -701,7 +813,8 @@ def calcular_proximo_horario(entrada: str) -> str:
     """Use quando o cidadão quiser saber o próximo ônibus da Linha 714 a partir de um horário, em uma data ou dia
     da semana, opcionalmente num ponto específico. O cálculo aplica o quadro de horários, a Portaria 47/2026,
     os feriados e o tempo de percurso até o ponto. NUNCA invente horário: chame esta ferramenta.
-    Entrada: 'linha=714, data=AAAA-MM-DD ou domingo, hora=HH:MM, ponto=P-705' (ponto opcional; data padrão: hoje)."""
+    Entrada: 'linha=714, data=domingo, hora=19:40, ponto=UBS Acácias'. O ponto é opcional (padrão: Terminal Central)
+    e aceita código (P-705) ou nome do local; a data aceita hoje, amanhã, domingo, sábado ou AAAA-MM-DD."""
     try:
         _contar()
         p = _parametros(entrada)
@@ -759,7 +872,12 @@ def verificar_gratuidade(entrada: str) -> str:
         if idade >= 65:
             return f"Tem direito em {quando}: 65 anos ou mais têm gratuidade integral em qualquer dia (art. 1º, I). Fonte: [doc_05]"
         if sim(p.get("pcd", "nao")):
-            return f"Tem direito em {quando}: pessoa com deficiência com laudo e Cartão Aurora Acesso (art. 1º, II). Fonte: [doc_05]"
+            extra = ""
+            if 60 <= idade <= 64:
+                extra = (" Sem o Cartão Aurora Acesso, pela idade (60 a 64 anos) a gratuidade vale só aos sábados, domingos "
+                         "e feriados até 31/12/2026 (art. 2º).")
+            return (f"Tem direito em {quando} como pessoa com deficiência, com laudo médico e cadastro no Cartão Aurora "
+                    f"Acesso (art. 1º, II).{extra} Fonte: [doc_05]")
         if sim(p.get("gestante", "nao")):
             ok = d <= fim_piloto
             return (f"{'Tem' if ok else 'Não tem'} direito em {quando}: gestante da 12ª semana até 90 dias após o parto, "
@@ -819,6 +937,8 @@ Regras:
 - Direito a gratuidade para uma idade e um dia: chame verificar_gratuidade.
 - Regras escritas (documentos exigidos, cadastro, serviço porta a porta, itinerário): chame buscar_documentos.
 - Pergunta composta: chame uma ferramenta para cada parte antes de responder.
+- Datas relativas: passe a palavra do cidadão como está (data=domingo, data=sábado, data=amanhã, data=hoje).
+  Nunca converta para AAAA-MM-DD por conta própria; a ferramenta calcula a data certa.
 - Use no máximo 6 ações. Se uma ferramenta devolver ERRO CONTROLADO, explique o problema ao cidadão.
 - A resposta final é em português simples, cita entre colchetes os doc_id que as ferramentas devolveram e termina
   com: "Este assistente não é canal oficial."
@@ -1017,7 +1137,7 @@ PADRAO_ATAQUE = re.compile(
     r"|ignore (all|any|the|previous|prior)|disregard|you are now|act as|pretend"
     r"|diga que o ponto (esta|ta) (aberto|liberado|funcionando)|responda (sempre|so) que")
 DOMINIO = re.compile(
-    r"onibus|linha|714|ponto|parada|terminal|horario|itinerario|trajeto|percurso|passa|tarifa|passagem|gratuid|de graca"
+    r"onibus|linha|714|ponto|parada|terminal|horario|itinerario|trajeto|percurso|tarifa|passagem|gratuid|de graca"
     r"|gratis|cartao|bilhete|idos|gestant|deficien|cadeira de rodas|cadeirante|acessib|elevador|porta a porta|aurora"
     r"|matriz|acacias|primavera|ipes|ubs|semob|cob|portaria|decreto|comunicado|transporte|mobilidade|embarc|desembarc"
     r"|frota|motorista|interdi|obra|desvio|feriado|domingo|sabado")
@@ -1174,8 +1294,9 @@ grupo** em `avaliacao/ground_truth.md` e é carregado abaixo.
 `embeddings=` com o `nomic-embed-text`. Métricas: `faithfulness`, `answer_relevancy` (`ResponseRelevancy`),
 `context_precision` (com referência) e `context_recall`.
 
-**Comparação:** avaliamos o pipeline com os dois chunkings da seção 1 (A e B) e o B com **reranking** (recupera 8
-trechos e um LLM reordena para ficar com os 4 mais úteis), para medir o efeito de cada decisão com o mesmo juiz.
+**Comparação:** quatro configurações, cada uma mudando **uma** decisão em relação à anterior, com o mesmo juiz e as
+mesmas 8 perguntas: chunking A × B (seção 1), busca vetorial × híbrida (seção 2) e híbrida com **reranking** (recupera
+8 trechos e um LLM reordena para ficar com os 4 mais úteis).
 """)
 
 code(r'''
@@ -1184,9 +1305,11 @@ def carregar_ground_truth(caminho: Path) -> list:
     itens = []
     for bloco in re.split(r"\n## ", texto)[1:]:
         cab = re.match(r"(P\d) · nível (\d)", bloco)
+        if not cab:
+            continue   # seção de instruções do arquivo
         pergunta = re.search(r"\*\*Pergunta:\*\*\s*(.+)", bloco).group(1).strip()
-        resposta = re.search(r"\*\*Resposta correta:\*\*\s*(.*?)\n\s*\*\*Escrito por:\*\*", bloco, re.S).group(1).strip()
-        autor = re.search(r"\*\*Escrito por:\*\*\s*(.*?)(\n---|\Z)", bloco, re.S).group(1).strip()
+        resposta = re.search(r"\*\*Resposta correta:\*\*(.*?)\*\*Escrito por:\*\*", bloco, re.S).group(1).strip()
+        autor = re.search(r"\*\*Escrito por:\*\*(.*?)(?:\n---|\Z)", bloco, re.S).group(1).strip()
         itens.append({"id": cab.group(1), "nivel": int(cab.group(2)), "pergunta": pergunta,
                       "ground_truth": resposta, "escrito_por": autor})
     return itens
@@ -1223,22 +1346,22 @@ Trechos numerados:
 Liste os números dos {k} trechos mais úteis para responder, do mais útil para o menos útil, separados por vírgula.
 Responda só com os números.""")
 
-def recuperar(pergunta: str, indice, k: int = K, rerank: bool = False):
+def recuperar(pergunta: str, ret, rerank: bool = False) -> list:
+    """ret: retriever da configuração. Com rerank, pega 2k candidatos e o LLM escolhe os k mais úteis."""
     if not rerank:
-        return [d for d, _ in indice.similarity_search_with_score(pergunta, k=k)]
-    candidatos = [d for d, _ in indice.similarity_search_with_score(pergunta, k=2 * k)]
+        return ret.invoke(pergunta)[:K]
+    candidatos = criar_hibrido(vectorstore, fragmentos, k=2 * K).invoke(pergunta)
     trechos = "\n\n".join(f"[{i}] {d.page_content[:700]}" for i, d in enumerate(candidatos))
-    saida = llm.invoke(RERANK.format(pergunta=pergunta, trechos=trechos, k=k)).content
+    saida = llm.invoke(RERANK.format(pergunta=pergunta, trechos=trechos, k=K)).content
     ordem = [int(n) for n in re.findall(r"\d+", saida) if int(n) < len(candidatos)]
-    ordem = list(dict.fromkeys(ordem + list(range(len(candidatos)))))[:k]
+    ordem = list(dict.fromkeys(ordem + list(range(len(candidatos)))))[:K]
     return [candidatos[i] for i in ordem]
 
-def gerar_amostras(indice, rerank: bool = False) -> list:
+def gerar_amostras(ret, rerank: bool = False) -> list:
     amostras = []
     for c in conjunto:
-        docs = recuperar(c["pergunta"], indice, rerank=rerank)
-        resposta = (prompt_rag | llm | StrOutputParser()).invoke(
-            {"contexto": formatar_contexto(docs), "pergunta": c["pergunta"]}).strip()
+        docs = recuperar(c["pergunta"], ret, rerank)
+        resposta = gerar_resposta.invoke({"contexto": formatar_contexto(docs), "pergunta": c["pergunta"]}).strip()
         amostras.append({"user_input": c["pergunta"], "response": resposta,
                          "retrieved_contexts": [d.page_content for d in docs], "reference": c["ground_truth"]})
     return amostras
@@ -1251,15 +1374,16 @@ def avaliar(amostras: list) -> pd.DataFrame:
     return tabela.rename(columns=ROTULOS)
 
 indice_a = indice_temporario(fragmentos_por_estrategia["A · 500 / sem sobreposição"], "ragas_a")
-CONFIGURACOES = {
-    "v1 · chunking A (500/0)": (indice_a, False),
-    "v2 · chunking B (1000/150)": (vectorstore, False),
-    "v3 · chunking B + reranking": (vectorstore, True),
+CONFIGURACOES = {   # cada linha muda UMA coisa em relação à anterior
+    "v1 · chunking A, busca vetorial": (indice_a.as_retriever(search_kwargs={"k": K}), False),
+    "v2 · chunking B, busca vetorial": (vectorstore.as_retriever(search_kwargs={"k": K}), False),
+    "v3 · chunking B, busca híbrida": (retriever_hibrido, False),
+    "v4 · chunking B, híbrida + reranking": (retriever_hibrido, True),
 }
 inicio = time.time()
 tabelas, amostras_por_config = {}, {}
-for nome, (indice, rerank) in CONFIGURACOES.items():
-    amostras_por_config[nome] = gerar_amostras(indice, rerank)
+for nome, (ret, rerank) in CONFIGURACOES.items():
+    amostras_por_config[nome] = gerar_amostras(ret, rerank)
     tabelas[nome] = avaliar(amostras_por_config[nome])
     print(f"{nome}: avaliado ({time.time() - inicio:.0f} s acumulados)")
 ''')
