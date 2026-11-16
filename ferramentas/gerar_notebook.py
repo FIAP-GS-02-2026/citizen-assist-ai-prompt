@@ -939,6 +939,8 @@ Regras:
 - Pergunta composta: chame uma ferramenta para cada parte antes de responder.
 - Datas relativas: passe a palavra do cidadão como está (data=domingo, data=sábado, data=amanhã, data=hoje).
   Nunca converta para AAAA-MM-DD por conta própria; a ferramenta calcula a data certa.
+- Nunca diga que não sabe sem antes chamar buscar_documentos. Se a base não responder, diga exatamente:
+  "Não há informação na base documental para responder a essa pergunta." e indique a Central 156 ou o Portal do Cidadão.
 - Use no máximo 6 ações. Se uma ferramenta devolver ERRO CONTROLADO, explique o problema ao cidadão.
 - A resposta final é em português simples, cita entre colchetes os doc_id que as ferramentas devolveram e termina
   com: "Este assistente não é canal oficial."
@@ -1063,6 +1065,11 @@ def atender(pergunta: str) -> dict:
     if not veredito["permitido"]:
         return {"resposta": veredito["mensagem"], "fontes": [], "ferramentas": [], "guardrail": veredito["guardrail"]}
     r = rodar_agente(pergunta)
+    if r["chamadas"] == 0:
+        # O agente respondeu sem consultar nada: a resposta passa a vir da cadeia RAG (citação + limite de confiança).
+        rag = responder_rag(pergunta)
+        r = {**r, "resposta": rag["resposta"], "ferramentas": ["cadeia RAG (LCEL)"],
+             "fontes": [f["doc_id"] for f in rag["fontes"]]}
     resposta = verificar_saida(r["resposta"])
     if AVISO not in resposta:
         resposta += f"\n\n{AVISO}"
@@ -1100,7 +1107,7 @@ with gr.Blocks(title="Citizen Assist AI · Mobilidade") as demo:
     gr.Examples(["O ônibus 714 passa no Jardim Primavera no domingo?",
                  "Minha mãe tem 62 anos. Ela anda de graça numa terça?",
                  "Que horas passa o próximo 714 na UBS Acácias às 19h40 de domingo?",
-                 "O ponto da Praça da Matriz está liberado?"], inputs=caixa)
+                 "O ponto da Praça da Matriz está liberado?"], inputs=caixa, label="Exemplos")
     enviar.click(conversar, [caixa, chat], [caixa, chat, painel])
     caixa.submit(conversar, [caixa, chat], [caixa, chat, painel])
     limpar.click(lambda: ([], "**Fontes usadas** aparecem aqui."), None, [chat, painel])
