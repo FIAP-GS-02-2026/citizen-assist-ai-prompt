@@ -100,12 +100,12 @@ def verificar(alvo: Path) -> list:
              all(c.get("execution_count") for c in executadas), f"{sum(bool(c.get('execution_count')) for c in executadas)}/{len(executadas)}")
         item(1, "nenhuma célula com erro", "ERRO_DE_EXECUCAO" not in saida)
         item(1, "nenhuma saída com a palavra ERROR/Traceback", not re.search(r"\bERROR\b|Traceback", saida))
-        item(1, "chave lida por userdata.get('OLLAMA_API_KEY')", "userdata.get('OLLAMA_API_KEY')" in codigo)
+        item(1, "chave lida por userdata.get (GROQ_API_KEY ou OLLAMA_API_KEY)", "userdata.get(nome)" in codigo and "'GROQ_API_KEY'" in codigo)
         item(1, "pip install com versões fixas (==) para langchain e chromadb",
              re.search(r"langchain==\d", codigo) and re.search(r"chromadb==\d", codigo))
         item(1, "sem API paga (sem openai/anthropic/gemini no código)",
              not re.search(r"langchain_openai|ChatOpenAI|anthropic|google\.generativeai|langchain_google", codigo))
-        item(1, "modelo via Ollama Cloud (ChatOllama + ollama.com)", "ChatOllama" in codigo and "https://ollama.com" in codigo)
+        item(1, "LLM grátis via Groq, com Ollama Cloud como alternativa", "ChatGroq" in codigo and "ChatOllama" in codigo and "https://ollama.com" in codigo)
         for rm in RMS:
             item(1, f"RM {rm} no notebook", rm in md)
         item(1, "turma, modalidade e frente declaradas", all(x in md for x in ("1CCR", "Trio", "Mobilidade")))

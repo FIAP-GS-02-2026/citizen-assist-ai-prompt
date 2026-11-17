@@ -38,7 +38,7 @@
   <rect x="200" y="192" width="200" height="58" rx="8" class="guarda"/>
   <text x="300" y="212" class="t">guardrails de entrada</text><text x="300" y="230" class="s">escopo · injeção · LGPD</text><text x="300" y="244" class="s">regras + classificador LLM</text>
   <rect x="430" y="192" width="200" height="58" rx="8" class="llm"/>
-  <text x="530" y="212" class="t">agente ReAct</text><text x="530" y="230" class="s">gemma4:cloud</text><text x="530" y="244" class="s">max_iterations = 6</text>
+  <text x="530" y="212" class="t">agente ReAct</text><text x="530" y="230" class="s">qwen3.8-27b (Groq)</text><text x="530" y="244" class="s">max_iterations = 6</text>
   <path d="M170,221 H198" class="l"/><path d="M400,221 H428" class="l"/>
 
   <!-- Tools -->
@@ -56,9 +56,9 @@
   <rect x="20" y="402" width="140" height="58" rx="8" class="caixa"/><text x="90" y="427" class="t">retriever</text><text x="90" y="445" class="s">top-4 + distance</text>
   <rect x="190" y="402" width="170" height="58" rx="8" class="guarda"/><text x="275" y="422" class="t">limite de confiança</text><text x="275" y="440" class="s">guardrail 4</text><text x="275" y="454" class="s">distance &gt; limiar → "não sei"</text>
   <rect x="390" y="402" width="160" height="58" rx="8" class="caixa"/><text x="470" y="427" class="t">prompt + contexto</text><text x="470" y="445" class="s">doc mais recente vale</text>
-  <rect x="580" y="402" width="140" height="58" rx="8" class="llm"/><text x="650" y="427" class="t">ChatOllama</text><text x="650" y="445" class="s">gemma4:cloud</text>
+  <rect x="580" y="402" width="140" height="58" rx="8" class="llm"/><text x="650" y="427" class="t">ChatGroq</text><text x="650" y="445" class="s">qwen3.8-27b (Groq)</text>
   <rect x="750" y="402" width="130" height="58" rx="8" class="caixa"/><text x="815" y="427" class="t">parser</text><text x="815" y="445" class="s">StrOutputParser</text>
   <rect x="910" y="402" width="170" height="58" rx="8" class="guarda"/><text x="995" y="422" class="t">checagem de citação</text><text x="995" y="440" class="s">doc_id ∈ contexto</text><text x="995" y="454" class="s">saída sem dado pessoal</text>
   <path d="M160,431 H188" class="l"/><path d="M360,431 H388" class="l"/><path d="M550,431 H578" class="l"/><path d="M720,431 H748" class="l"/><path d="M880,431 H908" class="l"/>
-  <text x="20" y="500" class="s" style="text-anchor:start">Avaliação (seção 7): RAGAS com juiz gpt-oss:120b e embeddings nomic-embed-text sobre 8 perguntas (4 simples + 4 armadilha) com ground truth do grupo → 3_avaliacao_ragas.json</text>
+  <text x="20" y="500" class="s" style="text-anchor:start">Avaliação (seção 7): RAGAS com juiz gpt-oss-120b (Groq) e embeddings nomic-embed-text sobre 8 perguntas (4 simples + 4 armadilha) com ground truth do grupo → 3_avaliacao_ragas.json</text>
 </svg>

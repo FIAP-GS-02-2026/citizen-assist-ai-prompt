@@ -22,6 +22,7 @@ PADROES = {
     "token GitHub": re.compile(r"\bgh[pousr]_[A-Za-z0-9]{30,}"),
     "token Hugging Face": re.compile(r"\bhf_[A-Za-z0-9]{30,}"),
     "chave AWS": re.compile(r"\bAKIA[0-9A-Z]{16}\b"),
+    "chave Groq": re.compile(r"\bgsk_[A-Za-z0-9]{40,}"),
 }
 
 

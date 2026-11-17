@@ -57,11 +57,12 @@ md("""
 | Modalidade | Trio (8 perguntas no RAGAS, 4 guardrails e documento extra) |
 | Frente de cidadania | A · Mobilidade urbana |
 | Integrantes | Glauco Kelly (RM 572840) · Gabriel Fagundes (RM 569074) · Thiago Renatino (RM 569073) |
-| Modelo gerador (resposta e agente) | `gemma4:cloud` via Ollama Cloud, temperature 0 |
-| Juiz do RAGAS | `gpt-oss:120b` via Ollama Cloud, temperature 0 (juiz forte, de outra família, para não avaliar a si mesmo) |
-| Embeddings | `nomic-embed-text` (Ollama local no Colab; a Ollama Cloud não serve embeddings) |
+| Provedor do LLM | Groq, plano grátis (um dos provedores do laboratório de inferência da disciplina). A Ollama Cloud deixou de ter cota grátis (erro 402); se houver `OLLAMA_API_KEY` nos Secrets e nenhuma `GROQ_API_KEY`, o notebook usa `ChatOllama` na Ollama Cloud |
+| Modelo gerador (resposta e agente) | `qwen/qwen3.8-27b` via Groq, temperature 0 |
+| Juiz do RAGAS | `openai/gpt-oss-120b` via Groq, temperature 0 (juiz maior e de outra família, para o modelo não avaliar a si mesmo) |
+| Embeddings | `nomic-embed-text` (Ollama local no Colab, sem custo e sem chave) |
 | Vector store | ChromaDB com distância de cosseno |
-| Chave | `OLLAMA_API_KEY` nos Secrets do Colab, lida com `userdata.get('OLLAMA_API_KEY')`; nunca aparece no notebook |
+| Chave | `GROQ_API_KEY` nos Secrets do Colab, lida com `userdata.get('GROQ_API_KEY')` (ou `OLLAMA_API_KEY`, com `userdata.get('OLLAMA_API_KEY')`); nunca aparece no notebook |
 
 **Divisão de tarefas**
 
@@ -76,7 +77,7 @@ simulada, que depois revisamos, para rascunhar o código das tools e para explic
 perguntas foi escrito à mão pelo grupo** e os **números do RAGAS são os medidos por este notebook**, nunca estimados.
 O registro completo está em `6_Chat_Log.txt`.
 
-**Como executar:** Secrets (ícone de chave) → `OLLAMA_API_KEY` com acesso liberado ao notebook → Runtime → Run all.
+**Como executar:** Secrets (ícone de chave) → `GROQ_API_KEY` (chave grátis em console.groq.com/keys) com acesso liberado ao notebook → Runtime → Run all.
 """)
 
 code(r'''
@@ -91,7 +92,7 @@ EM_COLAB = "google.colab" in sys.modules
 
 PACOTES = [
     "langchain==0.3.30", "langchain-core==0.3.86", "langchain-community==0.3.31",
-    "langchain-ollama==0.3.10", "langchain-chroma==0.2.6", "langchain-text-splitters==0.3.11",
+    "langchain-ollama==0.3.10", "langchain-groq==0.3.8", "groq==0.37.1", "langchain-chroma==0.2.6", "langchain-text-splitters==0.3.11",
     "chromadb==1.5.9", "ollama==0.6.3", "rank_bm25==0.2.2", "gradio==6.30.0", "ragas==0.4.3", "datasets==5.1.0",
 ]
 
@@ -114,43 +115,66 @@ print("Versões fixadas:", ", ".join(PACOTES))
 ''')
 
 code(r'''
-# Credencial e modelos. A chave vem dos Secrets do Colab; fora do Colab, da variável de ambiente ou do .env.
-def obter_chave() -> str:
+# Credencial e modelos. As chaves vêm dos Secrets do Colab; fora do Colab, de variável de ambiente ou do .env.
+# Provedor: Groq (plano grátis, um dos provedores do laboratório da disciplina). Se só houver OLLAMA_API_KEY
+# nos Secrets, o mesmo pipeline roda na Ollama Cloud com ChatOllama, sem mudar mais nada.
+def obter_segredo(nome: str) -> str:
     try:
         from google.colab import userdata
-        chave = userdata.get('OLLAMA_API_KEY')
-        if chave:
-            return chave.strip()
+        valor = userdata.get(nome)
+        if valor:
+            return valor.strip()
     except Exception:
         pass
-    chave = os.getenv("OLLAMA_API_KEY", "").strip()
-    if not chave and Path(".env").exists():
+    valor = os.getenv(nome, "").strip()
+    if not valor and Path(".env").exists():
         for linha in Path(".env").read_text().splitlines():
-            if linha.startswith("OLLAMA_API_KEY="):
-                chave = linha.split("=", 1)[1].strip()
-    return chave
+            if linha.startswith(nome + "="):
+                valor = linha.split("=", 1)[1].strip()
+    return valor
 
-URL_LLM = os.getenv("CITIZEN_URL_LLM", "https://ollama.com")   # Ollama Cloud
-MODELO_GERADOR = os.getenv("CITIZEN_MODELO", "gemma4:cloud")
-MODELO_JUIZ = os.getenv("CITIZEN_JUIZ", "gpt-oss:120b")
+CHAVE_GROQ = obter_segredo('GROQ_API_KEY')
+CHAVE_OLLAMA = obter_segredo('OLLAMA_API_KEY')
+URL_OLLAMA_LOCAL = os.getenv("CITIZEN_URL_LLM", "")          # só para desenvolvimento com modelo local
+if URL_OLLAMA_LOCAL:
+    PROVEDOR = "ollama_local"
+elif CHAVE_GROQ:
+    PROVEDOR = "groq"
+elif CHAVE_OLLAMA:
+    PROVEDOR = "ollama_cloud"
+else:
+    raise EnvironmentError("Nenhuma chave encontrada: Secrets (ícone de chave) → adicionar GROQ_API_KEY "
+                           "(ou OLLAMA_API_KEY) e liberar o acesso deste notebook.")
+
+MODELOS = {   # (gerador, juiz do RAGAS)
+    "groq": ("qwen/qwen3.8-27b", "openai/gpt-oss-120b"),
+    "ollama_cloud": ("gemma4:cloud", "gpt-oss:120b"),
+    "ollama_local": (os.getenv("CITIZEN_MODELO", "qwen2.5:7b"), os.getenv("CITIZEN_JUIZ", "qwen2.5:7b")),
+}
+MODELO_GERADOR, MODELO_JUIZ = MODELOS[PROVEDOR]
 URL_EMBEDDINGS = "http://localhost:11434"
 MODELO_EMBEDDINGS = "nomic-embed-text"
 
-CHAVE = obter_chave()
-if "ollama.com" in URL_LLM and not CHAVE:
-    raise EnvironmentError("OLLAMA_API_KEY não encontrada: Secrets (ícone de chave) → adicionar OLLAMA_API_KEY "
-                           "e liberar o acesso deste notebook.")
-
 from langchain_ollama import ChatOllama, OllamaEmbeddings
+from langchain_groq import ChatGroq
 
-def criar_llm(modelo: str = None, temperature: float = 0.0, num_predict: int = 1024) -> ChatOllama:
-    cabecalhos = {"Authorization": f"Bearer {CHAVE}"} if "ollama.com" in URL_LLM else {}
-    return ChatOllama(model=modelo or MODELO_GERADOR, base_url=URL_LLM, temperature=temperature,
-                      num_predict=num_predict, client_kwargs={"headers": cabecalhos, "timeout": 300})
+def criar_llm(modelo: str = None, temperature: float = 0.0, num_predict: int = 1024):
+    modelo = modelo or MODELO_GERADOR
+    if PROVEDOR == "groq":
+        # Os dois modelos raciocinam antes de responder e o raciocínio conta no limite de tokens: folga de 1.024
+        # tokens, raciocínio do Qwen escondido da resposta e esforço baixo no gpt-oss. max_retries alto porque o
+        # plano grátis devolve 429 quando passa de 8 mil tokens por minuto.
+        extra = {"reasoning_format": "hidden"} if "qwen" in modelo else {"reasoning_effort": "low"}
+        return ChatGroq(model=modelo, api_key=CHAVE_GROQ, temperature=temperature, max_tokens=num_predict + 1024,
+                        max_retries=10, timeout=120, **extra)
+    url = URL_OLLAMA_LOCAL or "https://ollama.com"
+    cabecalhos = {"Authorization": f"Bearer {CHAVE_OLLAMA}"} if PROVEDOR == "ollama_cloud" else {}
+    return ChatOllama(model=modelo, base_url=url, temperature=temperature, num_predict=num_predict,
+                      client_kwargs={"headers": cabecalhos, "timeout": 300})
 
 llm = criar_llm()
-print("Gerador:", MODELO_GERADOR, "· Juiz RAGAS:", MODELO_JUIZ, "· Embeddings:", MODELO_EMBEDDINGS)
-print("Chave carregada dos Secrets:", "sim" if CHAVE else "não (modelo local)")   # nunca imprimir a chave
+print("Provedor:", PROVEDOR, "· Gerador:", MODELO_GERADOR, "· Juiz RAGAS:", MODELO_JUIZ, "· Embeddings:", MODELO_EMBEDDINGS)
+print("Chave carregada dos Secrets:", "sim" if (CHAVE_GROQ or CHAVE_OLLAMA) else "não (modelo local)")   # nunca imprimir a chave
 ''')
 
 # =====================================================================================
@@ -483,7 +507,7 @@ display(pd.DataFrame([{"posição": i + 1, "distance": round(dist, 4), "chunk_id
 md("""
 ## 3. Pipeline RAG com contexto
 
-Pipeline em **LCEL**: `retriever → prompt com contexto → ChatOllama → parser`.
+Pipeline em **LCEL**: `retriever → prompt com contexto → LLM (ChatGroq; ChatOllama se a chave for da Ollama Cloud) → parser`.
 
 - **Citação obrigatória:** cada afirmação termina com o `doc_id` entre colchetes, e o código confere se o `doc_id`
   citado está entre os trechos recuperados.
@@ -582,7 +606,7 @@ def conferir_citacoes(x: dict) -> dict:
     return {**x, "resposta": resposta, "fontes": fontes, "citacoes_invalidas_removidas": invalidos,
             "contextos": [d.page_content for d in x["docs"]]}
 
-# Pipeline LCEL completo: retriever → prompt com contexto → ChatOllama → parser (+ limite de confiança e citação)
+# Pipeline LCEL completo: retriever → prompt com contexto → LLM (ChatGroq ou ChatOllama) → parser (+ limite de confiança e citação)
 cadeia_rag = (
     RunnableParallel(pergunta=itemgetter("pergunta"), docs=itemgetter("pergunta") | retriever)
     | RunnablePassthrough.assign(contexto=lambda x: formatar_contexto(x["docs"]))
@@ -941,6 +965,7 @@ Regras:
   Nunca converta para AAAA-MM-DD por conta própria; a ferramenta calcula a data certa.
 - Nunca diga que não sabe sem antes chamar buscar_documentos. Se a base não responder, diga exatamente:
   "Não há informação na base documental para responder a essa pergunta." e indique a Central 156 ou o Portal do Cidadão.
+- Antes de toda Action, escreva uma linha Thought com o motivo da próxima chamada (é o trace de auditoria).
 - Use no máximo 6 ações. Se uma ferramenta devolver ERRO CONTROLADO, explique o problema ao cidadão.
 - A resposta final é em português simples, cita entre colchetes os doc_id que as ferramentas devolveram e termina
   com: "Este assistente não é canal oficial."
@@ -1319,13 +1344,15 @@ portaria, contradição entre documentos e detalhe escondido no meio do texto). 
 grupo** em `avaliacao/ground_truth.md` e copiado sem alteração para a célula abaixo (assim o notebook roda sozinho,
 inclusive a partir do ZIP).
 
-**Juiz e embeddings configurados explicitamente:** `llm=` com o `gpt-oss:120b` (Ollama Cloud, temperature 0) e
+**Juiz e embeddings configurados explicitamente:** `llm=` com o `openai/gpt-oss-120b` (Groq, temperature 0) e
 `embeddings=` com o `nomic-embed-text`. Métricas: `faithfulness`, `answer_relevancy` (`ResponseRelevancy`),
 `context_precision` (com referência) e `context_recall`.
 
-**Comparação:** quatro configurações, cada uma mudando **uma** decisão em relação à anterior, com o mesmo juiz e as
-mesmas 8 perguntas: chunking A × B (seção 1), busca vetorial × híbrida (seção 2) e híbrida com **reranking** (recupera
-8 trechos e um LLM reordena para ficar com os 4 mais úteis).
+**Configuração avaliada:** a escolhida nas seções 1 e 2 (chunking B, busca híbrida, k = 5). Chunking A × B e busca
+vetorial × híbrida já foram comparados lá pela posição da evidência, sem gastar chamadas do juiz. O juiz custa cerca de
+13 mil tokens por pergunta (medido) e o plano grátis do Groq dá a ele cerca de 200 mil por dia; por isso o reranking
+(recupera 10 trechos e o LLM reordena para ficar com os 5 mais úteis) é um experimento opcional, ligado com
+`CITIZEN_RERANKING=1`.
 """)
 
 def ler_ground_truth() -> list:
@@ -1410,13 +1437,14 @@ def avaliar(amostras: list) -> pd.DataFrame:
     tabela = resultado.to_pandas()
     return tabela.rename(columns=ROTULOS)
 
-indice_a = indice_temporario(fragmentos_por_estrategia["A · 500 / sem sobreposição"], "ragas_a")
-CONFIGURACOES = {   # cada linha muda UMA coisa em relação à anterior
-    "v1 · chunking A, busca vetorial": (indice_a.as_retriever(search_kwargs={"k": K}), False),
-    "v2 · chunking B, busca vetorial": (vectorstore.as_retriever(search_kwargs={"k": K}), False),
-    "v3 · chunking B, busca híbrida": (retriever_hibrido, False),
-    "v4 · chunking B, híbrida + reranking": (retriever_hibrido, True),
-}
+# Custo medido do juiz: cerca de 13 mil tokens por pergunta (16 a 18 chamadas a cada 2 perguntas). O plano grátis do
+# Groq dá ao juiz cerca de 200 mil tokens por dia, então uma configuração (8 perguntas, ~105 mil) cabe com folga e
+# duas ficam no limite. Chunking (A × B) e busca (vetorial × híbrida) já foram comparados nas seções 1 e 2 pela posição
+# da evidência, sem gastar LLM. O reranking fica como experimento opcional: MEDIR_RERANKING = True dobra o custo.
+MEDIR_RERANKING = os.getenv("CITIZEN_RERANKING", "0") == "1"
+CONFIGURACOES = {"v1 · chunking B, busca híbrida (final)": (retriever_hibrido, False)}
+if MEDIR_RERANKING:
+    CONFIGURACOES["v2 · chunking B, híbrida + reranking"] = (retriever_hibrido, True)
 inicio = time.time()
 tabelas, amostras_por_config = {}, {}
 for nome, (ret, rerank) in CONFIGURACOES.items():
@@ -1450,7 +1478,7 @@ def _num(v):
 saida_ragas = {
     "projeto": "Citizen Assist AI · Mobilidade · Equipe GGT · 1CCR",
     "gerado_em": datetime.now(FUSO).isoformat(timespec="seconds"),
-    "modelo_gerador": MODELO_GERADOR, "juiz": {"llm": MODELO_JUIZ, "temperature": 0, "provedor": URL_LLM},
+    "modelo_gerador": MODELO_GERADOR, "juiz": {"llm": MODELO_JUIZ, "temperature": 0, "provedor": PROVEDOR}, "provedor": PROVEDOR,
     "embeddings": MODELO_EMBEDDINGS, "k": K, "metricas": METRICAS_FINAIS,
     "configuracao_final": CONFIG_FINAL,
     "media_configuracao_final": {m: _num(tabelas[CONFIG_FINAL][m].mean()) for m in METRICAS_FINAIS},

@@ -3,7 +3,7 @@ Sonda de guardrails no estilo da correção da Sprint 3: perguntas NOVAS (fora d
 guardrails generalizam. Carrega do notebook só as células necessárias (credencial, base, índice e seção 6).
 
 Uso: python ferramentas/sondar_guardrails.py
-Variáveis opcionais: CITIZEN_URL_LLM / CITIZEN_MODELO para testar com outro modelo.
+Usa o provedor do .env (GROQ_API_KEY). CITIZEN_URL_LLM / CITIZEN_MODELO testam com um modelo local.
 """
 
 import json
