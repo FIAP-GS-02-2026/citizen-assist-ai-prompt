@@ -96,12 +96,20 @@ e as faixas se sobrepõem, então um limiar baixo recusaria pergunta legítima.
 Decisão: o limiar fica logo acima da maior distância do domínio (rede de segurança) e quem decide o "não
 sei" no caso normal é a regra do prompt, que só aceita resposta com doc_id citado.
 
-[3.5 · Guardrail de escopo com falso negativo]
-Problema: "Me passa a receita de feijoada?" passava pelo filtro de escopo.
-Discussão: a palavra "passa" estava na lista de termos do domínio ("o ônibus passa no bairro?").
-Decisão: tiramos termos ambíguos da lista e deixamos o classificador LLM cuidar das paráfrases. Criamos
-uma sonda com 34 perguntas novas (fora da bateria do notebook) para ver se o guardrail generaliza; todas
-as decisões ficaram corretas.
+[3.5 · Guardrails: falso negativo e falso positivo]
+Problema 1: "Me passa a receita de feijoada?" passava pelo filtro de escopo, porque a palavra "passa" estava
+na lista de termos do domínio ("o ônibus passa no bairro?").
+Decisão: tiramos termos ambíguos e deixamos o classificador LLM cuidar das paráfrases. Criamos uma sonda
+com 34 perguntas novas e fomos ajustando as regras até acertar todas; por isso essa sonda passou a medir só
+regressão, não generalização.
+Problema 2: pedimos uma revisão independente com perguntas que ninguém tinha usado. Ela mostrou o lado
+oposto: a regra de LGPD bloqueava "Quais documentos uma PESSOA de 70 anos precisa?" (a nossa P1), a de
+ataque bloqueava "Esqueci meu cartão no ônibus anterior", e "Como inverter uma matriz 3x3?" passava porque
+"matriz" (Praça da Matriz) liberava o domínio. Também havia um bug: a troca de "1" por "i" (contra
+"1gn0r3") transformava "714" em "7i4".
+Decisão: regra de LGPD só com pedido de dado E pessoa determinada ("o morador que relatou"); regra de
+ataque só com objeto típico ("as instruções", "o comunicado"); domínio só com termos específicos (714,
+P-7xx, ônibus, gratuidade) e sem a troca de números. As perguntas da revisão viraram sondas na bateria.
 
 [3.6 · Agente ReAct]
 Problemas encontrados no trace:
@@ -127,7 +135,7 @@ não pede e dá cota separada por modelo (medido no cabeçalho da API: 1.000 ped
 Primeiro testamos o gpt-oss no agente: o 20b quebrou com "Tool choice is none, but model called a tool"
 (ele tenta chamar a ferramenta no formato nativo, não no texto ReAct) e o 120b respondeu sem chamar
 ferramenta, inventando que o P-703 estava funcionando. O qwen/qwen3.8-27b chamou a ferramenta certa nas 3
-perguntas do trace e manteve 58/58 decisões corretas na sonda de guardrails.
+perguntas do trace e manteve as decisões corretas na sonda de guardrails.
 Decisão: gerador qwen/qwen3.8-27b, juiz do RAGAS openai/gpt-oss-120b (outra família, cota própria).
 Ajuste extra: o segundo "thought" do trace saía vazio; incluímos no prompt a regra de escrever o motivo
 antes de cada Action.

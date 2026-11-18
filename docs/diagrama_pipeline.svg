@@ -48,12 +48,12 @@
   <rect x="680" y="304" width="190" height="40" rx="8" class="tool"/><text x="775" y="329" class="t">verificar_gratuidade</text>
   <path d="M630,215 L678,182" class="l"/><path d="M630,221 H678" class="l"/><path d="M630,227 L678,272" class="l"/><path d="M630,233 L678,318" class="l"/>
   <path d="M870,180 C930,180 930,130 900,132" class="l"/>
-  <text x="955" y="160" class="s">retriever k = 4</text>
+  <text x="955" y="160" class="s">retriever k = 5</text>
   <text x="980" y="290" class="s">cadastro operacional</text><text x="980" y="304" class="s">(transcrição dos docs)</text>
 
   <!-- Linha 3: RAG LCEL -->
   <text x="20" y="392" class="s" style="text-anchor:start">PIPELINE RAG EM LCEL (seção 3)</text>
-  <rect x="20" y="402" width="140" height="58" rx="8" class="caixa"/><text x="90" y="427" class="t">retriever</text><text x="90" y="445" class="s">top-4 + distance</text>
+  <rect x="20" y="402" width="140" height="58" rx="8" class="caixa"/><text x="90" y="427" class="t">retriever</text><text x="90" y="445" class="s">top-5 + distance</text>
   <rect x="190" y="402" width="170" height="58" rx="8" class="guarda"/><text x="275" y="422" class="t">limite de confiança</text><text x="275" y="440" class="s">guardrail 4</text><text x="275" y="454" class="s">distance &gt; limiar → "não sei"</text>
   <rect x="390" y="402" width="160" height="58" rx="8" class="caixa"/><text x="470" y="427" class="t">prompt + contexto</text><text x="470" y="445" class="s">doc mais recente vale</text>
   <rect x="580" y="402" width="140" height="58" rx="8" class="llm"/><text x="650" y="427" class="t">ChatGroq</text><text x="650" y="445" class="s">qwen3.8-27b (Groq)</text>

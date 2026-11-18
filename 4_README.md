@@ -78,7 +78,7 @@ e olhando a data:
 | Juiz do RAGAS | `openai/gpt-oss-120b`, temperature 0, com `llm=` e `embeddings=` explícitos | Juiz maior e de outra família que não o gerador, para o modelo não avaliar a si mesmo |
 | Agente | ReAct (`create_react_agent` + `AgentExecutor`), `max_iterations=6`, contador de chamadas | O trace thought → action → observation é a evidência pedida; o limite evita loop |
 | Tools | Leem um cadastro operacional transcrito dos documentos, com o `doc_id` de origem | O LLM decide **quando** chamar; o código decide **o que** a tool devolve (horário, situação do ponto, direito à gratuidade) |
-| Guardrails | Regras determinísticas primeiro, classificador LLM para paráfrases | A Sprint 3 mostrou que regra só por palavra-chave não pega variação; a bateria do notebook (24 sondas) e a sonda nova (`ferramentas/sondar_guardrails.py`, 34 sondas) medem isso |
+| Guardrails | Regras determinísticas primeiro, classificador LLM para paráfrases; as regras exigem contexto (pedido de dado **e** pessoa determinada; verbo de ataque **e** objeto como "as instruções") | A Sprint 3 mostrou que regra só por palavra-chave não pega variação. Uma revisão independente mostrou o problema oposto: a regra de LGPD bloqueava a P1 ("uma **pessoa** de 70 anos"). A bateria do notebook (30 sondas, com legítimas parecidas com ataque) e `ferramentas/sondar_guardrails.py` medem as duas direções |
 
 ## Prints
 
