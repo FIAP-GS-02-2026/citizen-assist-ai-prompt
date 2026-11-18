@@ -184,11 +184,12 @@ ChatGroq._combine_llm_outputs = _combinar_saidas
 def criar_llm(modelo: str = None, temperature: float = 0.0, num_predict: int = 1024):
     modelo = modelo or MODELO_GERADOR
     if PROVEDOR == "groq":
-        # Os dois modelos raciocinam antes de responder e o raciocínio conta no limite de tokens: folga de 1.024
-        # tokens, raciocínio do Qwen escondido da resposta e esforço baixo no gpt-oss. max_retries alto porque o
-        # plano grátis devolve 429 quando passa de 8 mil tokens por minuto.
+        # Conta nova no plano grátis tem teto de 1.000 tokens de SAÍDA por minuto (OTPM): um pedido com max_tokens
+        # acima disso é recusado com 429 "Request too large". Por isso max_tokens = 900 em todas as chamadas.
+        # Os dois modelos raciocinam antes de responder e o raciocínio conta nesse limite: Qwen com o raciocínio
+        # escondido da resposta, gpt-oss com esforço baixo. max_retries alto para esperar a janela de 1 minuto.
         extra = {"reasoning_format": "hidden"} if "qwen" in modelo else {"reasoning_effort": "low"}
-        return ChatGroq(model=modelo, api_key=CHAVE_GROQ, temperature=temperature, max_tokens=num_predict + 1024,
+        return ChatGroq(model=modelo, api_key=CHAVE_GROQ, temperature=temperature, max_tokens=900,
                         max_retries=10, timeout=120, **extra)
     url = URL_OLLAMA_LOCAL or "https://ollama.com"
     cabecalhos = {"Authorization": f"Bearer {CHAVE_OLLAMA}"} if PROVEDOR == "ollama_cloud" else {}
