@@ -144,5 +144,14 @@ Discussão: medi o juiz em 2 perguntas de teste: 16 a 18 chamadas e cerca de 26 
 Decisão: o RAGAS mede a configuração final; chunking e tipo de busca ficam comparados pela posição da
 evidência (seções 1 e 2, sem custo de LLM) e o reranking vira experimento opcional.
 
-[3.10 · Resultado do RAGAS]
-<!-- PREENCHER depois da execução: por que a métrica mais baixa ficou baixa e a melhoria proposta -->
+[3.10 · Resultado do RAGAS e erros da execução no Colab]
+Problemas na execução: (1) answer_relevancy saiu vazia nas 8 perguntas: o Groq aceita só n = 1 e o RAGAS
+pedia 3 respostas numa chamada; com bypass_n apareceu um bug do langchain-groq ao somar o uso de tokens
+('dict' += 'dict'), corrigido somando campo a campo. (2) A conta nova do Groq tem teto de 1.000 tokens de
+saída por minuto e recusou pedidos com max_tokens 2.048 ("Request too large"); passei para 900 e conferi
+que as respostas não saíram cortadas.
+Resultado: faithfulness 0,850 · answer_relevancy 0,621 · context_precision 0,875 · context_recall 1,000.
+Discussão com a IA sobre o número mais baixo: a P5 teve faithfulness 0,333 com a conclusão certa; o juiz
+penalizou a regra reescrita ("pessoas com 62 anos", gratuidade "integral"), que não está literal no
+decreto. A answer_relevancy baixa vem dos embeddings em português e de respostas completas (P2 0,436).
+Decisão: melhoria proposta na seção 7 (citar a regra literal antes da conclusão; reordenar por data na P6).

@@ -139,7 +139,7 @@ def verificar(alvo: Path) -> list:
         # ---- Critério 6: guardrails -------------------------------------------------------
         for g in ("escopo", "injection", "LGPD", "Limite de confiança"):
             item(6, f"guardrail documentado: {g}", g.lower() in md.lower())
-        item(6, "bateria automatizada de sondas com assert", "assert acertos == len(SONDAS)" in codigo)
+        item(6, "bateria automatizada de sondas com checagem", "conferir(acertos == len(SONDAS)" in codigo)
         m = re.search(r"Bateria de guardrails: (\d+)/(\d+)", saida)
         item(6, "bateria de sondas 100% na saída", m and m.group(1) == m.group(2), m.group(0) if m else "sem resultado")
         item(6, "injeção na fonte presente no documento e testada", "Ignore as instruções anteriores" in codigo)

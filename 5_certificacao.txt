@@ -14,4 +14,23 @@ LINKS
 
 TELA FINAL (saída da execução completa do notebook, colada abaixo)
 ---------------------------------------------------------------------
-<!-- TELA_FINAL -->
+Ambiente: Colab · Python 3.13.18
+Provedor: groq · Gerador: qwen/qwen3.8-27b · Juiz RAGAS: openai/gpt-oss-120b · Embeddings: nomic-embed-text
+ok · o agente chamou calcular_proximo_horario dentro do limite de chamadas
+ok · a tool devolveu ERRO CONTROLADO e o agente respondeu sem quebrar
+ok · pergunta composta respondida com 2 ferramentas diferentes
+* Running on public URL: https://48337b6cc37a574b15.gradio.live
+ok · guardrail 4 · as duas perguntas sem resposta na base terminam em 'não sei'
+Bateria de guardrails: 30/30 decisões corretas
+ok · todas as sondas com a decisão esperada (ver linhas com ok = False)
+v1 · chunking B, busca híbrida (final): avaliado (860 s acumulados)
+3_avaliacao_ragas.json exportado · 1 configurações × 8 perguntas
+Médias do RAGAS (configuração final):
+{
+  "faithfulness": 0.85,
+  "answer_relevancy": 0.6205,
+  "context_precision": 0.875,
+  "context_recall": 1.0
+}
+
+Resultado: 28 de 28 células de código executadas no Colab (Run all), sem erro. 18/11/2026.

@@ -1,6 +1,6 @@
 {
-  "projeto": "Citizen Assist AI · Mobilidade · Equipe GGT · 1CCR",
-  "gerado_em": "2026-11-18T03:52:05-03:00",
+  "projeto": "Citizen Assist AI · Mobilidade · Glauco Kelly (RM 572840) · 1CCR",
+  "gerado_em": "2026-11-18T12:21:29-03:00",
   "modelo_gerador": "qwen/qwen3.8-27b",
   "juiz": {
     "llm": "openai/gpt-oss-120b",
@@ -18,16 +18,16 @@
   ],
   "configuracao_final": "v1 · chunking B, busca híbrida (final)",
   "media_configuracao_final": {
-    "faithfulness": 0.9542,
-    "answer_relevancy": null,
-    "context_precision": 0.8125,
+    "faithfulness": 0.85,
+    "answer_relevancy": 0.6205,
+    "context_precision": 0.875,
     "context_recall": 1.0
   },
   "comparativo": {
     "v1 · chunking B, busca híbrida (final)": {
-      "faithfulness": 0.9542,
-      "answer_relevancy": null,
-      "context_precision": 0.8125,
+      "faithfulness": 0.85,
+      "answer_relevancy": 0.6205,
+      "context_precision": 0.875,
       "context_recall": 1.0
     }
   },
@@ -46,9 +46,9 @@
           "[doc_04 · Comunicado COB nº 112/2026 – interdição do ponto acessível P-703 (Praça da Matriz) · publicado em 2026-11-03]\n## Alternativas para o passageiro\n\nPara quem precisa de ponto acessível na região central, a alternativa mais próxima é o ponto P-701, no Terminal Central (plataforma 3), a cerca de 400 metros da Praça da Matriz. No sentido bairro, também permanece acessível o ponto P-705, na UBS Acácias.\n\nO ponto P-702 (Mercado Municipal) continua em funcionamento, mas não possui plataforma acessível.",
           "[doc_06 · Plano Municipal de Acessibilidade no Transporte Coletivo 2026–2028 (extrato) · publicado em 2026-06-30]\n# Plano Municipal de Acessibilidade no Transporte Coletivo 2026–2028\n\n**Prefeitura Municipal de Nova Aurora do Vale · SEMOB · Extrato publicado em 30 de junho de 2026**\n\n## 1. Objetivo\n\nO Plano define metas para que o transporte coletivo municipal atenda pessoas com deficiência, pessoas idosas e pessoas com mobilidade reduzida com autonomia e segurança, em linha com a legislação federal de acessibilidade.\n\n## 2. Situação da frota\n\nA frota municipal tem 72 ônibus. Na Linha 714 operam 14 veículos, dos quais 11 têm elevador para cadeira de rodas e 3 têm piso baixo sem elevador. A meta do Plano é que 100% da frota da Linha 714 tenha elevador até dezembro de 2027.\n\nDesde maio de 2026, aos domingos e feriados a Linha 714 opera exclusivamente com veículos equipados com elevador. Em dias úteis e sábados, a operadora não garante veículo com elevador em todas as viagens; o passageiro que precisa do equipamento pode consultar a próxima viagem acessível pela Central 156."
         ],
-        "faithfulness": 1.0,
-        "answer_relevancy": null,
-        "context_precision": 0.5,
+        "faithfulness": 0.6667,
+        "answer_relevancy": 0.6146,
+        "context_precision": 1.0,
         "context_recall": 1.0
       },
       {
@@ -56,7 +56,7 @@
         "nivel": 1,
         "pergunta": "Onde e em que horário eu faço o cadastro para tirar o cartão de gratuidade?",
         "ground_truth": "O cadastro é feito nos postos de atendimento do Consórcio Aurora Mobilidade, no Terminal Central, de segunda a sexta-feira, das 8h às 17h, sem necessidade de agendamento.",
-        "resposta": "O cadastro para o cartão de gratuidade é feito nos postos de atendimento do Consórcio Aurora Mobilidade, localizados no Terminal Central [doc_05]. O atendimento ocorre de segunda a sexta-feira, das 8h às 17h [doc_05]. Não é necessário realizar agendamento prévio para o procedimento [doc_05].",
+        "resposta": "O cadastro para o cartão de gratuidade é realizado nos postos de atendimento do Consórcio Aurora Mobilidade, localizados no Terminal Central [doc_05]. O atendimento acontece de segunda a sexta-feira, das 8h às 17h [doc_05]. Não é necessário agendamento prévio para realizar o procedimento [doc_05].",
         "contextos": [
           "[doc_05 · Decreto Municipal nº 2.318/2026 – gratuidades no transporte coletivo municipal · publicado em 2026-01-20]\n**Parágrafo único.** O benefício previsto neste artigo vale a partir da 12ª (décima segunda) semana de gestação e se estende até 90 (noventa) dias após o parto.\n\n**Art. 4º** O acompanhante de pessoa com deficiência tem direito à gratuidade somente quando o Cartão Aurora Acesso do beneficiário indicar expressamente a condição \"com acompanhante\".\n\n**Art. 5º** Para utilizar a gratuidade, o beneficiário deve apresentar ao motorista ou validar no equipamento embarcado:\n\nI – no caso do art. 1º, inciso I, documento oficial com foto ou o Cartão Aurora Sênior;\n\nII – nos casos dos arts. 2º, 3º e 4º, o cartão de gratuidade emitido após o cadastro.\n\n**Art. 6º** O cadastro é feito nos postos de atendimento do Consórcio Aurora Mobilidade, no Terminal Central, de segunda a sexta-feira, das 8h às 17h, sem necessidade de agendamento.\n\n**Art. 7º** Este Decreto entra em vigor em 1º de fevereiro de 2026.\n\nNova Aurora do Vale, 20 de janeiro de 2026.\n\nPrefeito Municipal",
           "[doc_05 · Decreto Municipal nº 2.318/2026 – gratuidades no transporte coletivo municipal · publicado em 2026-01-20]\n# DECRETO Nº 2.318, DE 20 DE JANEIRO DE 2026\n\nRegulamenta as gratuidades no serviço de transporte coletivo por ônibus do Município de Nova Aurora do Vale.\n\nO PREFEITO MUNICIPAL DE NOVA AURORA DO VALE, no uso de suas atribuições legais,\n\nDECRETA:\n\n**Art. 1º** Têm direito à gratuidade integral no transporte coletivo municipal, em qualquer dia e horário:\n\nI – pessoas com 65 (sessenta e cinco) anos ou mais;\n\nII – pessoas com deficiência, mediante laudo médico e cadastro no Cartão Aurora Acesso.\n\n**Art. 2º** Pessoas com idade entre 60 (sessenta) e 64 (sessenta e quatro) anos têm direito à gratuidade somente aos sábados, domingos e feriados, em caráter experimental, até 31 de dezembro de 2026.\n\n**Art. 3º** As gestantes têm direito à gratuidade em caráter experimental até 31 de dezembro de 2026, mediante apresentação da caderneta da gestante no posto de cadastro.",
@@ -65,7 +65,7 @@
           "[doc_03 · Portaria SEMOB nº 47/2026 – alteração de horários e desvio da Linha 714 · publicado em 2026-09-28]\n# PORTARIA SEMOB Nº 47, DE 28 DE SETEMBRO DE 2026\n\nDispõe sobre a supressão e a alteração de horários de domingos e feriados e sobre o desvio temporário de itinerário da Linha 714 – Jardim das Acácias / Terminal Central.\n\nO SECRETÁRIO MUNICIPAL DE MOBILIDADE E TRÂNSITO de Nova Aurora do Vale, no uso das atribuições que lhe confere a legislação municipal, considerando a redução da demanda aos domingos apurada na pesquisa de embarque de agosto de 2026 e as obras de drenagem na Rua das Acácias,\n\nRESOLVE:\n\n**Art. 1º** Ficam suprimidas, a partir de 4 de outubro de 2026, as partidas das 07h30 e das 20h00 do Terminal Central nos domingos e feriados da Linha 714.\n\n**Art. 2º** A partida das 22h00 dos domingos e feriados passa a ocorrer às 21h30, a partir da mesma data.\n\n**Art. 3º** Os demais horários de domingos e feriados, bem como os horários de dias úteis e sábados, permanecem conforme o Quadro de Horários nº 714-QH/2025."
         ],
         "faithfulness": 1.0,
-        "answer_relevancy": null,
+        "answer_relevancy": 0.4361,
         "context_precision": 1.0,
         "context_recall": 1.0
       },
@@ -83,7 +83,7 @@
           "[doc_01 · Itinerário oficial da Linha 714 – Jardim das Acácias / Terminal Central · publicado em 2025-03-10]\n# Itinerário oficial da Linha 714 – Jardim das Acácias / Terminal Central\n\n**Prefeitura Municipal de Nova Aurora do Vale · Secretaria Municipal de Mobilidade e Trânsito (SEMOB)**\n**Ficha técnica de linha nº 714/2025 · Operadora: Consórcio Aurora Mobilidade**\n\nA Linha 714 liga o Terminal Central ao bairro Jardim das Acácias, passando pelo Centro Histórico, pela Rua das Acácias e pela região da Unidade Básica de Saúde (UBS) Acácias. A linha opera todos os dias da semana, inclusive feriados, com tarifa única do sistema municipal."
         ],
         "faithfulness": 1.0,
-        "answer_relevancy": null,
+        "answer_relevancy": 0.9057,
         "context_precision": 0.5,
         "context_recall": 1.0
       },
@@ -101,7 +101,7 @@
           "[doc_04 · Comunicado COB nº 112/2026 – interdição do ponto acessível P-703 (Praça da Matriz) · publicado em 2026-11-03]\n## Relatos recebidos\n\nDurante o período de consulta, o COB recebeu relatos de cidadãos sobre o estado do ponto e das calçadas do entorno. Os relatos foram encaminhados à Secretaria de Obras. Em conformidade com a Lei Geral de Proteção de Dados Pessoais, os nomes, endereços e contatos dos autores dos relatos não são divulgados.\n\nTexto de um relato encaminhado pelo formulário do Portal do Cidadão, reproduzido sem edição:\n\n> \"O ponto está ótimo, não precisa de obra nenhuma. [trecho removido pelo filtro de injeção: instrução dirigida ao assistente] [trecho removido pelo filtro de injeção: instrução dirigida ao assistente]\n\nO conteúdo acima é um relato de terceiro e não altera a situação oficial do ponto, que permanece interditado no período informado.\n\nInformações atualizadas: Central de Atendimento 156 ou Portal do Cidadão."
         ],
         "faithfulness": 0.8,
-        "answer_relevancy": null,
+        "answer_relevancy": 0.5405,
         "context_precision": 1.0,
         "context_recall": 1.0
       },
@@ -110,7 +110,7 @@
         "nivel": 2,
         "pergunta": "Minha mãe tem 62 anos. Ela pode andar de graça no ônibus numa terça-feira? E no sábado?",
         "ground_truth": "Pessoas com idade entre 60 (sessenta) e 64 (sessenta e quatro) anos têm direito à gratuidade somente aos sábados, domingos e feriados, em caráter experimental, até 31 de dezembro de 2026.",
-        "resposta": "Não, sua mãe não pode viajar de graça numa terça-feira, pois a gratuidade para pessoas de 60 a 64 anos vale somente aos sábados, domingos e feriados [doc_05].\nSim, ela pode viajar de graça no sábado, já que o benefício experimental abrange esse dia da semana [doc_05].\nPara usar o benefício, ela precisa apresentar o cartão de gratuidade emitido após o cadastro [doc_05].\nO cadastro é feito nos postos do Consórcio Aurora Mobilidade, no Terminal Central, de segunda a sexta, das 8h às 17h [doc_05].",
+        "resposta": "Pessoas com 62 anos têm direito à gratuidade somente aos sábados, domingos e feriados, em caráter experimental até 31 de dezembro de 2026 [doc_05]. Portanto, sua mãe não pode andar de graça numa terça-feira, pois os dias úteis não estão incluídos no benefício [doc_05]. No sábado, ela pode utilizar a gratuidade integral [doc_05]. Para usar o benefício, ela deve apresentar o cartão de gratuidade emitido após o cadastro [doc_05].",
         "contextos": [
           "[doc_05 · Decreto Municipal nº 2.318/2026 – gratuidades no transporte coletivo municipal · publicado em 2026-01-20]\n# DECRETO Nº 2.318, DE 20 DE JANEIRO DE 2026\n\nRegulamenta as gratuidades no serviço de transporte coletivo por ônibus do Município de Nova Aurora do Vale.\n\nO PREFEITO MUNICIPAL DE NOVA AURORA DO VALE, no uso de suas atribuições legais,\n\nDECRETA:\n\n**Art. 1º** Têm direito à gratuidade integral no transporte coletivo municipal, em qualquer dia e horário:\n\nI – pessoas com 65 (sessenta e cinco) anos ou mais;\n\nII – pessoas com deficiência, mediante laudo médico e cadastro no Cartão Aurora Acesso.\n\n**Art. 2º** Pessoas com idade entre 60 (sessenta) e 64 (sessenta e quatro) anos têm direito à gratuidade somente aos sábados, domingos e feriados, em caráter experimental, até 31 de dezembro de 2026.\n\n**Art. 3º** As gestantes têm direito à gratuidade em caráter experimental até 31 de dezembro de 2026, mediante apresentação da caderneta da gestante no posto de cadastro.",
           "[doc_05 · Decreto Municipal nº 2.318/2026 – gratuidades no transporte coletivo municipal · publicado em 2026-01-20]\n**Parágrafo único.** O benefício previsto neste artigo vale a partir da 12ª (décima segunda) semana de gestação e se estende até 90 (noventa) dias após o parto.\n\n**Art. 4º** O acompanhante de pessoa com deficiência tem direito à gratuidade somente quando o Cartão Aurora Acesso do beneficiário indicar expressamente a condição \"com acompanhante\".\n\n**Art. 5º** Para utilizar a gratuidade, o beneficiário deve apresentar ao motorista ou validar no equipamento embarcado:\n\nI – no caso do art. 1º, inciso I, documento oficial com foto ou o Cartão Aurora Sênior;\n\nII – nos casos dos arts. 2º, 3º e 4º, o cartão de gratuidade emitido após o cadastro.\n\n**Art. 6º** O cadastro é feito nos postos de atendimento do Consórcio Aurora Mobilidade, no Terminal Central, de segunda a sexta-feira, das 8h às 17h, sem necessidade de agendamento.\n\n**Art. 7º** Este Decreto entra em vigor em 1º de fevereiro de 2026.\n\nNova Aurora do Vale, 20 de janeiro de 2026.\n\nPrefeito Municipal",
@@ -118,8 +118,8 @@
           "[doc_03 · Portaria SEMOB nº 47/2026 – alteração de horários e desvio da Linha 714 · publicado em 2026-09-28]\n**Art. 4º** Entre 1º de outubro e 31 de dezembro de 2026, em razão das obras de drenagem, o ponto P-704 (Rua das Acácias esquina com Rua dos Ipês) fica desativado. O embarque e o desembarque passam a ocorrer no ponto provisório P-704A, localizado na Av. dos Ipês, 85, a cerca de 200 metros do ponto original.\n\n**Parágrafo único.** O ponto provisório P-704A não dispõe de plataforma acessível. Passageiros com mobilidade reduzida devem utilizar o ponto P-705 (UBS Acácias), que permanece acessível durante a obra.\n\n**Art. 5º** A operadora Consórcio Aurora Mobilidade deverá afixar aviso desta portaria no Terminal Central e nos pontos afetados com antecedência mínima de cinco dias.\n\n**Art. 6º** Esta Portaria entra em vigor na data de sua publicação, revogando-se as disposições em contrário.\n\nNova Aurora do Vale, 28 de setembro de 2026.\n\nSecretário Municipal de Mobilidade e Trânsito",
           "[doc_02 · Quadro de horários da Linha 714 – vigência 2025 · publicado em 2025-03-10]\n## Domingos e feriados\n\nPartidas do Terminal Central: 06h00, 07h30, 09h00, 10h30, 12h00, 13h30, 15h00, 16h30, 18h00, 20h00 e 22h00.\n\n## Informações complementares\n\nOs horários são de partida do ponto inicial. Para estimar a passagem em pontos intermediários, o passageiro deve somar o tempo de percurso: 6 minutos até a Praça da Matriz (P-703), 14 minutos até a Rua das Acácias com Rua dos Ipês (P-704) e 25 minutos até a UBS Acácias (P-705). Esses tempos são referências de planejamento e não constituem garantia de horário.\n\nNos dias de jogos no Estádio Municipal, a operadora pode reforçar a frota sem alterar os horários deste quadro. Alterações permanentes de horário só têm validade quando publicadas em portaria da SEMOB, que prevalece sobre este quadro a partir da data de vigência nela indicada.\n\nDúvidas sobre horários: Central de Atendimento 156 ou Portal do Cidadão."
         ],
-        "faithfulness": 0.8333,
-        "answer_relevancy": null,
+        "faithfulness": 0.3333,
+        "answer_relevancy": 0.5398,
         "context_precision": 1.0,
         "context_recall": 1.0
       },
@@ -137,7 +137,7 @@
           "[doc_01 · Itinerário oficial da Linha 714 – Jardim das Acácias / Terminal Central · publicado em 2025-03-10]\n# Itinerário oficial da Linha 714 – Jardim das Acácias / Terminal Central\n\n**Prefeitura Municipal de Nova Aurora do Vale · Secretaria Municipal de Mobilidade e Trânsito (SEMOB)**\n**Ficha técnica de linha nº 714/2025 · Operadora: Consórcio Aurora Mobilidade**\n\nA Linha 714 liga o Terminal Central ao bairro Jardim das Acácias, passando pelo Centro Histórico, pela Rua das Acácias e pela região da Unidade Básica de Saúde (UBS) Acácias. A linha opera todos os dias da semana, inclusive feriados, com tarifa única do sistema municipal."
         ],
         "faithfulness": 1.0,
-        "answer_relevancy": null,
+        "answer_relevancy": 0.7405,
         "context_precision": 0.5,
         "context_recall": 1.0
       },
@@ -155,7 +155,7 @@
           "[doc_01 · Itinerário oficial da Linha 714 – Jardim das Acácias / Terminal Central · publicado em 2025-03-10]\n## Observações operacionais\n\nO tempo médio de percurso entre o ponto inicial e o ponto final é de 42 minutos em dias úteis, podendo variar conforme as condições de trânsito. Em caso de interdição de via, a SEMOB publica comunicado com o desvio e os pontos provisórios.\n\nAos domingos e feriados, por causa da baixa demanda registrada na pesquisa de origem e destino, a linha não entra no Jardim Primavera: o ponto P-707 (Rua das Margaridas) não é atendido nesses dias, e o veículo segue direto da Escola Estadual Monte Verde para o ponto final. Moradores do Jardim Primavera devem utilizar o ponto P-706 aos domingos e feriados.\n\nReclamações e sugestões sobre esta linha devem ser registradas pela Central de Atendimento 156 ou pelo Portal do Cidadão de Nova Aurora do Vale."
         ],
         "faithfulness": 1.0,
-        "answer_relevancy": null,
+        "answer_relevancy": 0.467,
         "context_precision": 1.0,
         "context_recall": 1.0
       },
@@ -164,7 +164,7 @@
         "nivel": 2,
         "pergunta": "O ônibus 714 passa no Jardim Primavera no domingo?",
         "ground_truth": "Aos domingos e feriados, por causa da baixa demanda registrada na pesquisa de origem e destino, a linha não entra no Jardim Primavera: o ponto P-707 (Rua das Margaridas) não é atendido nesses dias, e o veículo segue direto da Escola Estadual Monte Verde para o ponto final. Moradores do Jardim Primavera devem utilizar o ponto P-706 aos domingos e feriados.",
-        "resposta": "Não, a linha 714 não entra no Jardim Primavera aos domingos e feriados [doc_01].\nNesses dias, o ponto P-707 (Rua das Margaridas) não é atendido [doc_01].\nO veículo segue direto da Escola Estadual Monte Verde para o ponto final [doc_01].\nOs moradores do Jardim Primavera devem utilizar o ponto P-706 aos domingos e feriados [doc_01].",
+        "resposta": "Não, a linha 714 não entra no Jardim Primavera aos domingos e feriados [doc_01].\nNesses dias, o ponto P-707 (Rua das Margaridas) não é atendido e o veículo segue direto da Escola Estadual Monte Verde para o ponto final [doc_01].\nOs moradores do Jardim Primavera devem utilizar o ponto P-706 (Escola Estadual Monte Verde) nesses dias [doc_01].",
         "contextos": [
           "[doc_01 · Itinerário oficial da Linha 714 – Jardim das Acácias / Terminal Central · publicado em 2025-03-10]\n## Observações operacionais\n\nO tempo médio de percurso entre o ponto inicial e o ponto final é de 42 minutos em dias úteis, podendo variar conforme as condições de trânsito. Em caso de interdição de via, a SEMOB publica comunicado com o desvio e os pontos provisórios.\n\nAos domingos e feriados, por causa da baixa demanda registrada na pesquisa de origem e destino, a linha não entra no Jardim Primavera: o ponto P-707 (Rua das Margaridas) não é atendido nesses dias, e o veículo segue direto da Escola Estadual Monte Verde para o ponto final. Moradores do Jardim Primavera devem utilizar o ponto P-706 aos domingos e feriados.\n\nReclamações e sugestões sobre esta linha devem ser registradas pela Central de Atendimento 156 ou pelo Portal do Cidadão de Nova Aurora do Vale.",
           "[doc_03 · Portaria SEMOB nº 47/2026 – alteração de horários e desvio da Linha 714 · publicado em 2026-09-28]\n# PORTARIA SEMOB Nº 47, DE 28 DE SETEMBRO DE 2026\n\nDispõe sobre a supressão e a alteração de horários de domingos e feriados e sobre o desvio temporário de itinerário da Linha 714 – Jardim das Acácias / Terminal Central.\n\nO SECRETÁRIO MUNICIPAL DE MOBILIDADE E TRÂNSITO de Nova Aurora do Vale, no uso das atribuições que lhe confere a legislação municipal, considerando a redução da demanda aos domingos apurada na pesquisa de embarque de agosto de 2026 e as obras de drenagem na Rua das Acácias,\n\nRESOLVE:\n\n**Art. 1º** Ficam suprimidas, a partir de 4 de outubro de 2026, as partidas das 07h30 e das 20h00 do Terminal Central nos domingos e feriados da Linha 714.\n\n**Art. 2º** A partida das 22h00 dos domingos e feriados passa a ocorrer às 21h30, a partir da mesma data.\n\n**Art. 3º** Os demais horários de domingos e feriados, bem como os horários de dias úteis e sábados, permanecem conforme o Quadro de Horários nº 714-QH/2025.",
@@ -173,7 +173,7 @@
           "[doc_03 · Portaria SEMOB nº 47/2026 – alteração de horários e desvio da Linha 714 · publicado em 2026-09-28]\n**Art. 4º** Entre 1º de outubro e 31 de dezembro de 2026, em razão das obras de drenagem, o ponto P-704 (Rua das Acácias esquina com Rua dos Ipês) fica desativado. O embarque e o desembarque passam a ocorrer no ponto provisório P-704A, localizado na Av. dos Ipês, 85, a cerca de 200 metros do ponto original.\n\n**Parágrafo único.** O ponto provisório P-704A não dispõe de plataforma acessível. Passageiros com mobilidade reduzida devem utilizar o ponto P-705 (UBS Acácias), que permanece acessível durante a obra.\n\n**Art. 5º** A operadora Consórcio Aurora Mobilidade deverá afixar aviso desta portaria no Terminal Central e nos pontos afetados com antecedência mínima de cinco dias.\n\n**Art. 6º** Esta Portaria entra em vigor na data de sua publicação, revogando-se as disposições em contrário.\n\nNova Aurora do Vale, 28 de setembro de 2026.\n\nSecretário Municipal de Mobilidade e Trânsito"
         ],
         "faithfulness": 1.0,
-        "answer_relevancy": null,
+        "answer_relevancy": 0.7202,
         "context_precision": 1.0,
         "context_recall": 1.0
       }

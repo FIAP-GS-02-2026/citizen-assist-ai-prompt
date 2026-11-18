@@ -25,7 +25,20 @@ O **Citizen Assist AI · Mobilidade** responde a essas perguntas a partir da bas
 - diz "não há informação na base" quando não sabe;
 - tem a qualidade medida com RAGAS sobre 8 perguntas com ground truth escrito à mão por mim.
 
-<!-- RESULTADOS -->
+## Resultados medidos (execução no Colab, 18/11/2026)
+
+| O que | Número | Onde |
+|---|---|---|
+| Evidência recuperada nas 8 perguntas | busca híbrida **8/8** (MRR 0,729) × só vetorial 7/8 (MRR 0,531) | seção 2 |
+| RAGAS · faithfulness | **0,850** (pior: P5 = 0,333) | seção 7 · `3_avaliacao_ragas.json` |
+| RAGAS · answer_relevancy | **0,621** | seção 7 |
+| RAGAS · context_precision | **0,875** (P3 e P6 = 0,5) | seção 7 |
+| RAGAS · context_recall | **1,000** | seção 7 |
+| Agente | 3 traces corretos, inclusive a pergunta composta com 2 tools | seção 4 |
+| Guardrails | **30/30** sondas com a decisão esperada | seção 6 |
+
+Gerador `qwen/qwen3.8-27b`, juiz `openai/gpt-oss-120b` (Groq), embeddings `nomic-embed-text`, 0 falhas do juiz.
+A leitura dos números e a melhoria proposta estão na seção 7 do notebook.
 
 ## Diagrama do pipeline
 
@@ -77,7 +90,16 @@ e olhando a data:
 
 ## Prints
 
-<!-- PRINTS -->
+| | |
+|---|---|
+| ![Interface com fontes e ferramentas](docs/prints/05_interface_agente.png) Pergunta composta: o agente chama `verificar_gratuidade` e `consultar_status_ponto` e mostra as fontes | ![Interface RAG](docs/prints/05_interface_rag.png) Detalhe escondido (doc_01) respondido com a fonte |
+| ![URL pública](docs/prints/05_url_publica.png) URL pública do Gradio gerada no Colab | ![Trace](docs/prints/04_trace_composta.png) Trace thought → action → observation |
+| ![Guardrail 1](docs/prints/06_guardrail_1_escopo.png) Guardrail 1 · fora do escopo | ![Guardrail 2](docs/prints/06_guardrail_2_injecao.png) Guardrail 2 · injeção na pergunta |
+| ![Guardrail 3](docs/prints/06_guardrail_3_lgpd.png) Guardrail 3 · LGPD | ![Guardrail 4](docs/prints/06_guardrail_4_nao_sei.png) Guardrail 4 · "não sei" |
+| ![Injeção na fonte](docs/prints/06_injecao_na_fonte.png) Injeção plantada no doc_04: filtrada e ignorada | ![Bateria](docs/prints/06_bateria_sondas.png) Bateria de 30 sondas |
+| ![Busca com distance](docs/prints/02_query_distance.png) Busca com `distance` | ![RAGAS](docs/prints/07_ragas_comparativo.png) Tabela do RAGAS |
+
+Outros prints da execução: `docs/prints/` (chunking, coleção ChromaDB, limite de confiança, erro controlado, custo, JSON).
 
 ## Como executar
 
@@ -111,7 +133,16 @@ jupyter nbconvert --to notebook --execute 1_Notebook_GS2026_2.ipynb
 
 ## Custo aproximado
 
-<!-- CUSTO -->
+Medido na seção 4 (3 perguntas do trace, contando a chamada do classificador do guardrail): **3,3 chamadas ao LLM,
+3,4 mil tokens de entrada e 479 de saída por pergunta**. O RAGAS gasta cerca de 13 mil tokens do juiz por pergunta
+avaliada (16 a 22 chamadas a cada 2 perguntas).
+
+- **Custo em dinheiro: zero.** Plano grátis do Groq e embeddings no Ollama local do Colab.
+- **Limites do plano grátis (lidos no cabeçalho da API):** 1.000 pedidos por dia e 8 mil tokens por minuto por modelo;
+  conta nova também com 1.000 tokens de saída por minuto, por isso `max_tokens = 900`. Isso dá algumas centenas de
+  perguntas de cidadãos por dia, suficiente para piloto, não para produção.
+- **Projeção paga:** 1.000 perguntas por dia ≈ 3,9 milhões de tokens por dia. Em produção o modelo precisaria de cota
+  contratada ou hospedagem própria.
 
 ## Limitações
 

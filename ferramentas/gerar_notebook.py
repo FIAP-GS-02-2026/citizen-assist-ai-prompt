@@ -1565,7 +1565,43 @@ print(json.dumps(saida_ragas["media_configuracao_final"], indent=2))
 md("""
 ### Leitura dos números
 
-<!-- ANALISE_RAGAS -->
+**Configuração avaliada:** chunking B (1.000/150), busca híbrida, k = 5 · gerador `qwen/qwen3.8-27b` · juiz
+`openai/gpt-oss-120b` (Groq) · embeddings `nomic-embed-text` · 8 perguntas · 0 NaN (o juiz respondeu em todas).
+
+| Métrica | Média | Nível 1 | Nível 2 | Pior caso |
+|---|---|---|---|---|
+| faithfulness | **0,850** | 0,867 | 0,833 | P5 = 0,333 |
+| answer_relevancy | **0,621** | 0,624 | 0,617 | P2 = 0,436 · P7 = 0,467 |
+| context_precision | **0,875** | 0,875 | 0,875 | P3 = 0,5 · P6 = 0,5 |
+| context_recall | **1,000** | 1,000 | 1,000 | — |
+
+**context_recall 1,0.** O trecho com a resposta veio no contexto das 8 perguntas, o que confirma a medição da seção 2
+(busca híbrida: evidência no top-5 em 8/8). Ressalva: o meu ground truth reaproveita a redação dos documentos, o
+que facilita o juiz achar cada frase no contexto; com respostas de referência mais livres o recall tende a cair.
+
+**context_precision 0,875.** P3 e P6 ficaram em 0,5 porque um trecho menos útil veio antes do trecho decisivo. Na P6
+isso é a própria armadilha: o quadro de 2025 (doc_02, desatualizado) aparece em 1º lugar e a portaria que suprimiu a
+partida das 20h00 (doc_03) em 2º; provavelmente porque o BM25 favorece "domingo" e "20h", palavras que estão no quadro antigo.
+A resposta saiu certa (cita o doc_03 e avisa que o doc_02 está desatualizado) graças à data no cabeçalho de cada
+trecho e à regra "vale o mais recente", mas a ordem da recuperação ainda é a do texto, não a da vigência.
+
+**faithfulness 0,850.** O pior caso é a P5 (faixa condicional), com 0,333. A conclusão está certa (terça não, sábado
+sim), mas a resposta reescreve a regra: diz "pessoas com 62 anos têm direito", quando o decreto fala de "60 a 64
+anos", e chama a gratuidade do sábado de "integral", termo que o art. 1º usa só para quem tem 65 anos ou mais. O juiz
+só aceita afirmações que saem literalmente do contexto, então a aplicação da regra ao caso conta como não sustentada.
+P1 (0,667) e P4 (0,8) perderam pelo mesmo motivo, em escala menor.
+
+**answer_relevancy 0,621.** A métrica gera perguntas a partir da resposta e compara com a original por embeddings.
+O `nomic-embed-text` aproxima mal frases em português (a seção 2 já mostrou distâncias do domínio e de fora se
+sobrepondo), e respostas completas pontuam menos: P2 (0,436) traz local, dias, horário e "sem agendamento"; P7
+(0,467) traz a interdição e duas alternativas. As duas respostas estão certas e completas.
+
+**Melhoria concreta.** A P5, com faithfulness de 0,333, é a pergunta em que o modelo aplica uma regra condicional
+por conta própria. Na interface isso já não acontece: o agente chama `verificar_gratuidade`, que devolve a regra com
+o artigo e a conclusão calculada pelo código (trace 3 da seção 4). Para a cadeia RAG, a melhoria é exigir no prompt a
+citação literal da regra antes da conclusão ("Art. 2º: 60 a 64 anos, só sábados, domingos e feriados → terça: não").
+Para a P6 (context_precision 0,5), o próximo passo é reordenar pela `data_publicacao` quando dois trechos tratam do
+mesmo assunto; o reranking já está implementado como experimento (`CITIZEN_RERANKING=1`).
 """)
 
 # =====================================================================================
@@ -1574,7 +1610,20 @@ md("""
 md("""
 ## 8. Conclusão
 
-<!-- CONCLUSAO -->
+**O que funcionou.** A busca híbrida achou a evidência das 8 perguntas (MRR 0,729, contra 0,531 da busca só vetorial),
+e o RAGAS confirmou: context_recall 1,0, context_precision 0,875 e faithfulness 0,85. As quatro armadilhas foram
+respondidas certo: portaria que suprime horário, comunicado que contradiz o plano, faixa de 60 a 64 anos e detalhe
+escondido no meio da ficha da linha. O agente acertou os 3 traces com média de 3,3 chamadas ao LLM e 3,4 mil tokens
+por pergunta, e os guardrails acertaram 30/30 sondas, inclusive perguntas legítimas parecidas com ataque.
+
+**Onde erra e por quê.** Quando o modelo aplica uma regra condicional com as próprias palavras, ele se afasta do texto
+(P5: faithfulness 0,333). Quando um documento antigo usa as mesmas palavras da pergunta, ele vem antes do mais novo
+(P6: context_precision 0,5). E a relevância (0,621) é limitada pelos embeddings em português.
+
+**Para produção.** Dados reais: diário oficial e GTFS/GTFS-RT da operadora, com ingestão automática e versão de cada
+portaria. LGPD: base legal do tratamento, retenção curta de logs, encarregado de dados e nenhum relato identificável
+no índice. Infraestrutura: modelo com cota contratada ou próprio (a cota grátis limitou a avaliação a uma configuração),
+embeddings multilíngues e monitoramento contínuo de faithfulness com perguntas reais dos cidadãos.
 """)
 
 destino = RAIZ / ARQUIVO
