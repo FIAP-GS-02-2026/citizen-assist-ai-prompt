@@ -1,5 +1,5 @@
 """
-Monta dist/GS2026_2_1CCR_EquipeGGT.zip com exatamente os 7 itens do briefing e roda o checklist e a varredura de
+Monta dist/GS2026_2_1CCR_GlaucoKelly.zip com exatamente os 7 itens do briefing e roda o checklist e a varredura de
 credenciais sobre o ZIP pronto. Sai com código 1 se qualquer verificação falhar.
 
 Uso: python ferramentas/montar_zip.py
@@ -11,7 +11,7 @@ import zipfile
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
-DESTINO = RAIZ / "dist" / "GS2026_2_1CCR_EquipeGGT.zip"
+DESTINO = RAIZ / "dist" / "GS2026_2_1CCR_GlaucoKelly.zip"
 ARQUIVOS = ["1_Notebook_GS2026_2.ipynb", "3_avaliacao_ragas.json", "4_README.md", "5_certificacao.txt",
             "6_Chat_Log.txt", "7_demo_video_url.txt"]
 

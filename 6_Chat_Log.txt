@@ -1,18 +1,15 @@
-GS 2026.2 · Prompt and Artificial Intelligence · Equipe GGT · 1CCR
+GS 2026.2 · Prompt and Artificial Intelligence · Glauco Kelly (RM 572840) · 1CCR
 Registro do uso de IA como ferramenta (seção 9 do briefing)
 =====================================================================
 
-Integrantes
-- Glauco Kelly (RM 572840)
-- Gabriel Fagundes (RM 569074)
-- Thiago Renatino (RM 569073)
+Aluno: Glauco Kelly (RM 572840) · entrega individual
 
-Ferramenta usada: Claude Code (assistente de programação com o modelo Claude), operado pelo Glauco no
-computador dele, com o repositório do projeto aberto. Não usamos IA para gerar o ground truth nem os números
+Ferramenta usada: Claude Code (assistente de programação com o modelo Claude), operado por mim no meu
+computador, com o repositório do projeto aberto. Não usei IA para gerar o ground truth nem os números
 do RAGAS.
 
 ---------------------------------------------------------------------
-1. O que pedimos à IA e o que fizemos com o resultado
+1. O que pedi à IA e o que fiz com o resultado
 ---------------------------------------------------------------------
 
 1.1 Levantamento do enunciado e das lições das Sprints
@@ -26,33 +23,33 @@ caso-limite nos testes (Sprint 1).
 1.2 Base documental (permitido: "gerar parte dos documentos da base documental (e revisar)")
 Pedido: rascunhar seis publicações de um município fictício (Nova Aurora do Vale) no formato de documento
 público: ficha da linha, quadro de horários, portaria, comunicado do COB, decreto de gratuidades e plano de
-acessibilidade, com as armadilhas que definimos.
-Decisões do grupo: frente A (mobilidade), Linha 714, as três armadilhas (portaria que suprime horários de
+acessibilidade, com as armadilhas que defini.
+Minhas decisões: frente A (mobilidade), Linha 714, as três armadilhas (portaria que suprime horários de
 domingo, comunicado que contradiz o plano sobre o ponto P-703, faixa condicional de 60 a 64 anos até
 31/12/2026), o detalhe escondido (Jardim Primavera sem atendimento aos domingos) e a injeção plantada no relato
 de um cidadão dentro do comunicado.
-Revisão: conferimos datas, artigos e números entre os documentos para que as armadilhas fossem resolvíveis só
+Revisão: conferi datas, artigos e números entre os documentos para que as armadilhas fossem resolvíveis só
 com a base (por exemplo, a portaria de 28/09/2026 é mais recente que o quadro de 2025).
 
 1.3 Código do notebook
 Pedido: rascunhar o código das seções 1 a 7 (carga com metadados, comparação de chunkings, ChromaDB, cadeia
 LCEL, tools do agente, Gradio, guardrails e RAGAS) e explicar erros de execução.
-Uso: revisamos e ajustamos o código. Erros que a IA ajudou a explicar e que corrigimos:
+Uso: revisei e ajustei o código. Erros que a IA ajudou a explicar e que corrigi:
 - ChromaDB recusou nome de coleção com acento ("Expected a name containing [a-zA-Z0-9._-]").
 - O guardrail de escopo deixou passar "Me passa a receita de feijoada?" porque a palavra "passa" estava na
-  lista de termos do domínio; tiramos a palavra e a sonda passou a ser bloqueada.
+  lista de termos do domínio; tirei a palavra e a sonda passou a ser bloqueada.
 - A leitura do arquivo de ground truth quebrava quando a resposta ainda estava em branco.
 - Gradio 6 não aceita mais o parâmetro type="messages" no Chatbot.
 
 1.4 Ambiente
 Pedido: explicar o erro HTTP 402 da Ollama Cloud ("Add usage credits or subscribe").
 Resposta: a Ollama Cloud passou a cobrar por token e não tem mais cota gratuita. O professor indicou o
-laboratório de inferência com provedores grátis; escolhemos o Groq (ver 3.8).
+laboratório de inferência com provedores grátis; escolhi o Groq (ver 3.8).
 
 ---------------------------------------------------------------------
 2. O que NÃO foi feito pela IA (proibições do briefing)
 ---------------------------------------------------------------------
-- Ground truth das 8 perguntas: escrito à mão pelo grupo em avaliacao/ground_truth.md (campo "Escrito por"
+- Ground truth das 8 perguntas: escrito à mão por mim em avaliacao/ground_truth.md (campo "Escrito por"
   em cada pergunta). A IA só escreveu as perguntas e, depois, conferiu se as respostas batiam com os
   documentos, sem reescrevê-las.
 - Resultado do RAGAS: medido pelo notebook e exportado por ele em 3_avaliacao_ragas.json; nenhum número foi
@@ -67,7 +64,7 @@ com a IA → decisão → número que sustenta. Todos os números vêm de testes
 
 [3.1 · Tamanho do chunk]
 Problema: com qual tamanho de fragmento a evidência certa chega ao modelo?
-Discussão: comparamos A (500 caracteres, sem sobreposição) com B (1.000, sobreposição de 150), medindo
+Discussão: comparei A (500 caracteres, sem sobreposição) com B (1.000, sobreposição de 150), medindo
 em que posição o trecho com a resposta aparece para cada uma das 8 perguntas.
 Resultado: B recupera a evidência em 7/8 (MRR 0,531); A em 6/8 (MRR 0,456). Com 500 caracteres a regra e a
 exceção caem em fragmentos diferentes: o intervalo de 20 minutos (P3) e a interdição do P-703 (P7) somem.
@@ -76,14 +73,14 @@ Decisão: B, com cabeçalho [doc_id · título · data] em cada fragmento para o
 [3.2 · Busca só vetorial x híbrida]
 Problema: mesmo com B, uma pergunta ficava sem evidência no top-5.
 Discussão: a IA explicou que o nomic-embed-text aproxima mal frases em português e que palavras exatas
-(número de artigo, código de ponto, "sábado") se perdem no vetor. Testamos BM25 + vetorial fundidos por
+(número de artigo, código de ponto, "sábado") se perdem no vetor. Testei BM25 + vetorial fundidos por
 Reciprocal Rank Fusion (constante 60).
 Resultado: vetorial 7/8 (MRR 0,531) → híbrida 8/8 (MRR 0,729).
 Decisão: busca híbrida no pipeline final.
 
 [3.3 · Valor de k]
 Problema: k maior traz mais evidência, mas também mais ruído e mais tokens.
-Discussão: além das 8 perguntas, criamos 6 paráfrases (gíria, sem acento, pergunta indireta) para não
+Discussão: além das 8 perguntas, criei 6 paráfrases (gíria, sem acento, pergunta indireta) para não
 escolher k só com as perguntas da avaliação.
 Resultado: k=4 → 12/14 evidências; k=5 → 13/14; k=6 → 13/14, com o contexto subindo de 3,8 mil para 4,7
 mil e 5,6 mil caracteres.
@@ -91,7 +88,7 @@ Decisão: k=5 (k=6 não ganha nada e encarece).
 
 [3.4 · Limite de confiança para o "não sei"]
 Hipótese inicial: recusar quando a distância do melhor trecho passar de um limiar.
-Discussão: medimos a distância de perguntas do domínio e de fora ("previsão do tempo", "bolo de cenoura")
+Discussão: medi a distância de perguntas do domínio e de fora ("previsão do tempo", "bolo de cenoura")
 e as faixas se sobrepõem, então um limiar baixo recusaria pergunta legítima.
 Decisão: o limiar fica logo acima da maior distância do domínio (rede de segurança) e quem decide o "não
 sei" no caso normal é a regra do prompt, que só aceita resposta com doc_id citado.
@@ -99,11 +96,11 @@ sei" no caso normal é a regra do prompt, que só aceita resposta com doc_id cit
 [3.5 · Guardrails: falso negativo e falso positivo]
 Problema 1: "Me passa a receita de feijoada?" passava pelo filtro de escopo, porque a palavra "passa" estava
 na lista de termos do domínio ("o ônibus passa no bairro?").
-Decisão: tiramos termos ambíguos e deixamos o classificador LLM cuidar das paráfrases. Criamos uma sonda
-com 34 perguntas novas e fomos ajustando as regras até acertar todas; por isso essa sonda passou a medir só
+Decisão: tirei termos ambíguos e deixei o classificador LLM cuidar das paráfrases. Criei uma sonda
+com 34 perguntas novas e fui ajustando as regras até acertar todas; por isso essa sonda passou a medir só
 regressão, não generalização.
-Problema 2: pedimos uma revisão independente com perguntas que ninguém tinha usado. Ela mostrou o lado
-oposto: a regra de LGPD bloqueava "Quais documentos uma PESSOA de 70 anos precisa?" (a nossa P1), a de
+Problema 2: pedi uma revisão independente com perguntas que ninguém tinha usado. Ela mostrou o lado
+oposto: a regra de LGPD bloqueava "Quais documentos uma PESSOA de 70 anos precisa?" (a P1 da avaliação), a de
 ataque bloqueava "Esqueci meu cartão no ônibus anterior", e "Como inverter uma matriz 3x3?" passava porque
 "matriz" (Praça da Matriz) liberava o domínio. Também havia um bug: a troca de "1" por "i" (contra
 "1gn0r3") transformava "714" em "7i4".
@@ -113,7 +110,7 @@ P-7xx, ônibus, gratuidade) e sem a troca de números. As perguntas da revisão 
 
 [3.6 · Agente ReAct]
 Problemas encontrados no trace:
-- o modelo às vezes respondia sem a linha "Final Answer:" e o AgentExecutor quebrava → criamos um parser
+- o modelo às vezes respondia sem a linha "Final Answer:" e o AgentExecutor quebrava → criei um parser
   que aceita texto sem "Action:" como resposta final;
 - o modelo convertia "domingo" para uma data errada → o prompt passa a mandar a palavra do cidadão e a tool
   calcula a data;
@@ -130,19 +127,19 @@ modelo ainda assim não obedece.
 
 [3.8 · Troca de provedor e escolha do modelo gerador]
 Problema: a Ollama Cloud devolveu HTTP 402 em todas as contas testadas (saldo e cota grátis zerados).
-Discussão: comparamos os provedores do laboratório do professor. A Cerebras passou a pedir cartão; o Groq
+Discussão: comparei os provedores do laboratório do professor. A Cerebras passou a pedir cartão; o Groq
 não pede e dá cota separada por modelo (medido no cabeçalho da API: 1.000 pedidos/dia e 8 mil tokens/min).
-Primeiro testamos o gpt-oss no agente: o 20b quebrou com "Tool choice is none, but model called a tool"
+Primeiro testei o gpt-oss no agente: o 20b quebrou com "Tool choice is none, but model called a tool"
 (ele tenta chamar a ferramenta no formato nativo, não no texto ReAct) e o 120b respondeu sem chamar
 ferramenta, inventando que o P-703 estava funcionando. O qwen/qwen3.8-27b chamou a ferramenta certa nas 3
 perguntas do trace e manteve as decisões corretas na sonda de guardrails.
 Decisão: gerador qwen/qwen3.8-27b, juiz do RAGAS openai/gpt-oss-120b (outra família, cota própria).
-Ajuste extra: o segundo "thought" do trace saía vazio; incluímos no prompt a regra de escrever o motivo
+Ajuste extra: o segundo "thought" do trace saía vazio; incluí no prompt a regra de escrever o motivo
 antes de cada Action.
 
 [3.9 · Custo do juiz do RAGAS]
 Problema: caberia comparar várias configurações no RAGAS dentro da cota grátis?
-Discussão: medimos o juiz em 2 perguntas de teste: 16 a 18 chamadas e cerca de 26 mil tokens, ou seja,
+Discussão: medi o juiz em 2 perguntas de teste: 16 a 18 chamadas e cerca de 26 mil tokens, ou seja,
 ~13 mil por pergunta. Oito perguntas custam ~105 mil tokens, e o juiz tem cerca de 200 mil por dia.
 Decisão: o RAGAS mede a configuração final; chunking e tipo de busca ficam comparados pela posição da
 evidência (seções 1 e 2, sem custo de LLM) e o reranking vira experimento opcional.

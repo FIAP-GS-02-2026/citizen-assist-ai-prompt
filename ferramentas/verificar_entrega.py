@@ -25,7 +25,7 @@ ITENS_ZIP = ["1_Notebook_GS2026_2.ipynb", "2_base_documental/", "3_avaliacao_rag
 TITULOS = ["0. Metadados", "1. Base documental e chunking", "2. Embeddings e índice ChromaDB",
            "3. Pipeline RAG com contexto", "4. Agente com ferramentas", "5. Interface Gradio",
            "6. Segurança e guardrails", "7. Avaliação com RAGAS", "8. Conclusão"]
-RMS = ["572840", "569074", "569073"]
+RMS = ["572840"]
 
 
 class Fonte:
@@ -108,7 +108,7 @@ def verificar(alvo: Path) -> list:
         item(1, "LLM grátis via Groq, com Ollama Cloud como alternativa", "ChatGroq" in codigo and "ChatOllama" in codigo and "https://ollama.com" in codigo)
         for rm in RMS:
             item(1, f"RM {rm} no notebook", rm in md)
-        item(1, "turma, modalidade e frente declaradas", all(x in md for x in ("1CCR", "Trio", "Mobilidade")))
+        item(1, "turma, modalidade e frente declaradas", all(x in md for x in ("1CCR", "Individual", "Mobilidade")))
 
         # ---- Critério 2: base e chunking --------------------------------------------------
         item(2, "metadados titulo, data_publicacao e tema carregados", all(x in codigo for x in ('"titulo"', '"data_publicacao"', '"tema"')))

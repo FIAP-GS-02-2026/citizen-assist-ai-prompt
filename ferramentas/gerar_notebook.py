@@ -52,11 +52,10 @@ md("""
 
 | Campo | Valor |
 |---|---|
-| Equipe | Equipe GGT |
 | Turma | 1CCR |
-| Modalidade | Trio (8 perguntas no RAGAS, 4 guardrails e documento extra) |
+| Modalidade | Individual. Mantive o escopo completo: 8 perguntas no RAGAS (o mínimo individual é 3 + 3), 4 guardrails e documento extra |
 | Frente de cidadania | A · Mobilidade urbana |
-| Integrantes | Glauco Kelly (RM 572840) · Gabriel Fagundes (RM 569074) · Thiago Renatino (RM 569073) |
+| Aluno | Glauco Kelly (RM 572840) |
 | Provedor do LLM | Groq, plano grátis (um dos provedores do laboratório de inferência da disciplina). A Ollama Cloud deixou de ter cota grátis (erro 402); se houver `OLLAMA_API_KEY` nos Secrets e nenhuma `GROQ_API_KEY`, o notebook usa `ChatOllama` na Ollama Cloud |
 | Modelo gerador (resposta e agente) | `qwen/qwen3.8-27b` via Groq, temperature 0 |
 | Juiz do RAGAS | `openai/gpt-oss-120b` via Groq, temperature 0 (juiz maior e de outra família, para o modelo não avaliar a si mesmo) |
@@ -64,18 +63,10 @@ md("""
 | Vector store | ChromaDB com distância de cosseno |
 | Chave | `GROQ_API_KEY` nos Secrets do Colab, lida com `userdata.get('GROQ_API_KEY')` (ou `OLLAMA_API_KEY`, com `userdata.get('OLLAMA_API_KEY')`); nunca aparece no notebook |
 
-**Divisão de tarefas**
-
-| Integrante | Responsabilidade |
-|---|---|
-| Glauco Kelly | Pipeline RAG (seções 1 a 3), agente e ferramentas (seção 4), ground truth das 8 perguntas, integração do notebook |
-| Gabriel Fagundes | Base documental (revisão das armadilhas e do documento extra), guardrails e bateria de testes (seção 6) |
-| Thiago Renatino | Avaliação RAGAS e análise dos números (seção 7), interface Gradio (seção 5) |
-
-**Declaração de uso de IA.** Usamos IA (Claude Code) como ferramenta para rascunhar os documentos da base simulada e
-o código do notebook, que revisamos e testamos, e para explicar erros. As decisões técnicas (chunking, busca híbrida,
-k, modelo, guardrails) foram tomadas pelo grupo a partir das medições registradas em cada seção. O **ground truth das 8
-perguntas foi escrito à mão pelo grupo** e os **números do RAGAS são os medidos por este notebook**, nunca estimados.
+**Declaração de uso de IA.** Usei IA (Claude Code) como ferramenta para rascunhar os documentos da base simulada e o
+código do notebook, que revisei e testei, e para explicar erros. As decisões técnicas (chunking, busca híbrida,
+k, modelo, guardrails) foram tomadas por mim a partir das medições registradas em cada seção. O **ground truth das 8
+perguntas foi escrito à mão por mim** e os **números do RAGAS são os medidos por este notebook**, nunca estimados.
 O registro completo está em `6_Chat_Log.txt`.
 
 **Como executar:** Secrets (ícone de chave) → `GROQ_API_KEY` (chave grátis em console.groq.com/keys) com acesso liberado ao notebook → Runtime → Run all.
@@ -215,7 +206,7 @@ print("Chave carregada dos Secrets:", "sim" if (CHAVE_GROQ or CHAVE_OLLAMA) else
 md("""
 ## 1. Base documental e chunking
 
-A base é **simulada e escrita pelo grupo**: 6 publicações de um município fictício, em `.md`, cada uma com
+A base é **simulada e escrita para este projeto**: 6 publicações de um município fictício, em `.md`, cada uma com
 `doc_id`, `titulo`, `data_publicacao` e `tema` no cabeçalho. Elas foram escritas como documentos públicos
 (ficha de linha, quadro de horários, portaria, comunicado, decreto e plano) e não como material de aula.
 
@@ -226,7 +217,7 @@ A base é **simulada e escrita pelo grupo**: 6 publicações de um município fi
 | doc_03 | Portaria SEMOB nº 47/2026 | 28/09/2026 | **desatualização**: suprime as partidas de 07h30 e 20h00 de domingo e desativa o P-704 |
 | doc_04 | Comunicado COB nº 112/2026 | 03/11/2026 | **contradição**: P-703 interditado (o doc_06 diz ativo) + **injeção** plantada num relato |
 | doc_05 | Decreto nº 2.318/2026 | 20/01/2026 | **faixa condicional**: 60 a 64 anos só sábado, domingo e feriado, até 31/12/2026 |
-| doc_06 | Plano de Acessibilidade 2026–2028 | 30/06/2026 | documento extra do trio: frota com elevador, serviço porta a porta |
+| doc_06 | Plano de Acessibilidade 2026–2028 | 30/06/2026 | documento extra: frota com elevador, serviço porta a porta |
 
 Ao carregar, cada documento passa pelo **filtro de injeção na fonte** (guardrail 2, detalhado na seção 6): frases
 que dão ordem ao assistente são trocadas por um marcador antes de entrar no índice.
@@ -1191,7 +1182,7 @@ print("Interface no ar (URL pública acima)." if EM_COLAB else "Interface no ar 
 md("""
 ## 6. Segurança e guardrails
 
-Quatro guardrails (exigência do trio), em camadas: regras determinísticas primeiro (rápidas, sem custo de modelo)
+Quatro guardrails (o trio exige 4; mantive os 4 na entrega individual), em camadas: regras determinísticas primeiro (rápidas, sem custo de modelo)
 e um classificador com LLM para o que as regras não pegam (paráfrase, outra língua, pedido disfarçado).
 
 | # | Guardrail | Onde atua | Teste obrigatório do briefing |
@@ -1413,8 +1404,8 @@ md("""
 ## 7. Avaliação com RAGAS
 
 **Conjunto:** 8 perguntas, 4 de nível 1 (simples) e 4 de nível 2 (armadilha: faixa condicional, desatualização por
-portaria, contradição entre documentos e detalhe escondido no meio do texto). O **ground truth foi escrito à mão pelo
-grupo** em `avaliacao/ground_truth.md` e copiado sem alteração para a célula abaixo (assim o notebook roda sozinho,
+portaria, contradição entre documentos e detalhe escondido no meio do texto). O **ground truth foi escrito à mão por
+mim** em `avaliacao/ground_truth.md` e copiado sem alteração para a célula abaixo (assim o notebook roda sozinho,
 inclusive a partir do ZIP).
 
 **Juiz e embeddings configurados explicitamente:** `llm=` com o `openai/gpt-oss-120b` (Groq, temperature 0) e
@@ -1429,7 +1420,7 @@ vetorial × híbrida já foram comparados lá pela posição da evidência, sem 
 """)
 
 def ler_ground_truth() -> list:
-    """Lê avaliacao/ground_truth.md (escrito à mão pelo grupo) e devolve as 8 perguntas com a resposta, sem alterar o texto."""
+    """Lê avaliacao/ground_truth.md (escrito à mão pelo autor) e devolve as 8 perguntas com a resposta, sem alterar o texto."""
     import re as _re
     texto = (RAIZ / "avaliacao" / "ground_truth.md").read_text(encoding="utf-8")
     itens = []
@@ -1449,13 +1440,13 @@ def ler_ground_truth() -> list:
 CONJUNTO = ler_ground_truth()
 linhas_conjunto = ",\n".join("    " + repr(c) for c in CONJUNTO)
 code(f"""
-# Conjunto de avaliação: 8 perguntas com o ground truth escrito à mão pelo grupo (copiado de avaliacao/ground_truth.md).
+# Conjunto de avaliação: 8 perguntas com o ground truth escrito à mão pelo autor (copiado de avaliacao/ground_truth.md).
 conjunto = [
 {linhas_conjunto},
 ]
 faltando = [c["id"] for c in conjunto if not c["ground_truth"]]
 assert len(conjunto) == 8 and sum(c["nivel"] == 1 for c in conjunto) == 4, "o conjunto precisa ter 8 perguntas, 4 + 4"
-assert not faltando, f"ground truth ainda não escrito pelo grupo: {{faltando}}"
+assert not faltando, f"ground truth ainda não escrito: {{faltando}}"
 assert all(c["pergunta"] == PERGUNTAS_TESTE[c["id"]] for c in conjunto), "perguntas diferentes das da seção 1"
 display(pd.DataFrame(conjunto))
 """)
@@ -1551,7 +1542,7 @@ def _num(v):
     return None if v is None or (isinstance(v, float) and math.isnan(v)) else round(float(v), 4)
 
 saida_ragas = {
-    "projeto": "Citizen Assist AI · Mobilidade · Equipe GGT · 1CCR",
+    "projeto": "Citizen Assist AI · Mobilidade · Glauco Kelly (RM 572840) · 1CCR",
     "gerado_em": datetime.now(FUSO).isoformat(timespec="seconds"),
     "modelo_gerador": MODELO_GERADOR, "juiz": {"llm": MODELO_JUIZ, "temperature": 0, "provedor": PROVEDOR}, "provedor": PROVEDOR,
     "embeddings": MODELO_EMBEDDINGS, "k": K, "metricas": METRICAS_FINAIS,

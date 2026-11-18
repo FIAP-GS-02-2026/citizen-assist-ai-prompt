@@ -1,12 +1,10 @@
 GS 2026.2 · Prompt and Artificial Intelligence · Prof. Jorge Luiz Gomes
 Citizen Assist AI · Mobilidade (frente A: mobilidade urbana)
-Equipe GGT · Turma 1CCR · Modalidade: trio
+Turma 1CCR · Modalidade: individual
 =====================================================================
 
-INTEGRANTES
+ALUNO
 - Glauco Kelly ........ RM 572840
-- Gabriel Fagundes .... RM 569074
-- Thiago Renatino ..... RM 569073
 
 LINKS
 - Notebook no Colab: https://colab.research.google.com/github/FIAP-GS-02-2026/citizen-assist-ai-prompt/blob/main/1_Notebook_GS2026_2.ipynb

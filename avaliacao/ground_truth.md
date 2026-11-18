@@ -1,6 +1,6 @@
 # Ground truth das 8 perguntas do RAGAS
 
-**Quem preenche:** o grupo (Glauco, Gabriel e Thiago), à mão. O briefing proíbe pedir à IA o ground_truth;
+**Quem preenche:** o aluno (Glauco Kelly), à mão. O briefing proíbe pedir à IA o ground_truth;
 se a verdade for gerada pelo modelo, o critério 7 cai para no máximo 1,0.
 
 ## Como preencher

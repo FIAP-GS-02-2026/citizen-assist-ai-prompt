@@ -1,13 +1,8 @@
 # Citizen Assist AI · Mobilidade · GS 2026.2
 
 **FIAP · Ciência da Computação · Prompt and Artificial Intelligence · Prof. Jorge Luiz Gomes**
-**Equipe GGT · Turma 1CCR · Modalidade: trio · Frente A: mobilidade urbana**
+**Glauco Kelly · RM 572840 · Turma 1CCR · Modalidade: individual (escopo completo do trio) · Frente A: mobilidade urbana**
 
-| Integrante | RM |
-|---|---|
-| Glauco Kelly | 572840 |
-| Gabriel Fagundes | 569074 |
-| Thiago Renatino | 569073 |
 
 [Notebook no Colab](https://colab.research.google.com/github/FIAP-GS-02-2026/citizen-assist-ai-prompt/blob/main/1_Notebook_GS2026_2.ipynb) ·
 [Repositório](https://github.com/FIAP-GS-02-2026/citizen-assist-ai-prompt) ·
@@ -28,7 +23,7 @@ O **Citizen Assist AI · Mobilidade** responde a essas perguntas a partir da bas
   com ferramentas, em vez de deixar o LLM inventar;
 - recusa o que está fora do escopo, tentativas de injeção e pedidos de dados de cidadãos (LGPD);
 - diz "não há informação na base" quando não sabe;
-- tem a qualidade medida com RAGAS sobre 8 perguntas com ground truth escrito pelo grupo.
+- tem a qualidade medida com RAGAS sobre 8 perguntas com ground truth escrito à mão por mim.
 
 <!-- RESULTADOS -->
 
@@ -50,7 +45,7 @@ RAG em LCEL: retriever ─▶ limite de confiança ─▶ prompt com contexto �
 
 ## A armadilha da base documental
 
-A base tem 6 documentos escritos pelo grupo (5 obrigatórios + 1 extra do trio), todos com `doc_id`, `titulo`,
+A base tem 6 documentos escritos para o projeto (5 obrigatórios + 1 extra), todos com `doc_id`, `titulo`,
 `data_publicacao` e `tema`. Ela foi montada para que perguntas comuns só sejam respondidas certo juntando trechos
 e olhando a data:
 
@@ -73,7 +68,7 @@ e olhando a data:
 | Distância | Cosseno no ChromaDB | Medida limitada de 0 a 2, legível na tabela de busca com score |
 | Limite de confiança | Distância mínima > `LIMIAR_DISTANCIA` → "não sei" sem chamar o modelo; abaixo disso, regra 5 do prompt | Medimos que a distância **não separa** sozinha as perguntas do domínio das de fora (as faixas se sobrepõem). Por isso o limiar fica acima da maior distância do domínio e serve só como rede de segurança |
 | Conflito entre documentos | Data de publicação no cabeçalho do trecho e regra "vale o mais recente, avise sobre o desatualizado" | É a armadilha da base: doc_06 × doc_04 e doc_02 × doc_03 |
-| Provedor do LLM | Groq, plano grátis, chave `GROQ_API_KEY` nos Secrets | A Ollama Cloud deixou de ter cota grátis (HTTP 402 em todas as contas que testamos). O Groq é um dos provedores do laboratório de inferência da disciplina e não exige cartão. Se houver só `OLLAMA_API_KEY` nos Secrets, o notebook usa `ChatOllama` na Ollama Cloud sem outra mudança |
+| Provedor do LLM | Groq, plano grátis, chave `GROQ_API_KEY` nos Secrets | A Ollama Cloud deixou de ter cota grátis (HTTP 402 em todas as contas que testei). O Groq é um dos provedores do laboratório de inferência da disciplina e não exige cartão. Se houver só `OLLAMA_API_KEY` nos Secrets, o notebook usa `ChatOllama` na Ollama Cloud sem outra mudança |
 | Modelo gerador | `qwen/qwen3.8-27b`, temperature 0 | No teste do agente, o `gpt-oss` do Groq ou respondia sem chamar ferramenta (inventou "o ponto está funcionando") ou quebrava o formato ReAct; o Qwen chamou a ferramenta certa nas 3 perguntas do trace |
 | Juiz do RAGAS | `openai/gpt-oss-120b`, temperature 0, com `llm=` e `embeddings=` explícitos | Juiz maior e de outra família que não o gerador, para o modelo não avaliar a si mesmo |
 | Agente | ReAct (`create_react_agent` + `AgentExecutor`), `max_iterations=6`, contador de chamadas | O trace thought → action → observation é a evidência pedida; o limite evita loop |
@@ -145,5 +140,5 @@ push protection do GitHub ligado.
 
 ## Uso de IA
 
-Registrado em `6_Chat_Log.txt`. O ground truth das 8 perguntas foi escrito à mão pelo grupo e os números do RAGAS
+Registrado em `6_Chat_Log.txt`. O ground truth das 8 perguntas foi escrito à mão por mim e os números do RAGAS
 são os medidos pelo notebook.
