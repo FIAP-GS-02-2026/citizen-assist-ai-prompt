@@ -170,6 +170,26 @@ MODELO_EMBEDDINGS = "nomic-embed-text"
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_groq import ChatGroq
 
+def _somar(a: dict, b: dict) -> dict:
+    """Soma o uso de tokens de várias respostas, inclusive os campos aninhados que o Groq devolve."""
+    for k, v in (b or {}).items():
+        if isinstance(v, dict):
+            a[k] = _somar(dict(a.get(k) or {}), v)
+        elif isinstance(v, (int, float)) and isinstance(a.get(k, 0), (int, float)):
+            a[k] = a.get(k, 0) + v
+    return a
+
+def _combinar_saidas(self, saidas: list) -> dict:
+    uso = {}
+    for s in saidas:
+        if s:
+            _somar(uso, s.get("token_usage") or {})
+    return {"token_usage": uso, "model_name": self.model_name}
+
+# langchain-groq 0.3.8 quebra ao somar o uso de várias respostas com campos aninhados ('dict' += 'dict'); isso
+# acontece quando o RAGAS manda 3 pedidos de uma vez no answer_relevancy. Esta versão soma campo a campo.
+ChatGroq._combine_llm_outputs = _combinar_saidas
+
 def criar_llm(modelo: str = None, temperature: float = 0.0, num_predict: int = 1024):
     modelo = modelo or MODELO_GERADOR
     if PROVEDOR == "groq":
@@ -1447,7 +1467,9 @@ from ragas.embeddings import LangchainEmbeddingsWrapper
 from ragas.metrics import Faithfulness, ResponseRelevancy, LLMContextPrecisionWithReference, LLMContextRecall
 from ragas.run_config import RunConfig
 
-juiz = LangchainLLMWrapper(criar_llm(MODELO_JUIZ, temperature=0.0, num_predict=4000))
+# bypass_n=True: o Groq aceita só n = 1 por chamada; o answer_relevancy pede 3 perguntas geradas e, assim, o RAGAS
+# faz 3 chamadas em vez de uma com n = 3 (sem isso a métrica volta NaN com "'n' : number must be at most 1").
+juiz = LangchainLLMWrapper(criar_llm(MODELO_JUIZ, temperature=0.0, num_predict=4000), bypass_n=True)
 # answer_relevancy compara pergunta com pergunta: embeddings sem prefixo de tarefa.
 embeddings_juiz = LangchainEmbeddingsWrapper(OllamaEmbeddings(model=MODELO_EMBEDDINGS, base_url=URL_EMBEDDINGS))
 METRICAS = [Faithfulness(), ResponseRelevancy(), LLMContextPrecisionWithReference(), LLMContextRecall()]
