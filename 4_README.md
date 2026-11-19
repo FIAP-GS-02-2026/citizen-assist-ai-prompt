@@ -42,7 +42,7 @@ A leitura dos números e a melhoria proposta estão na seção 7 do notebook.
 
 ## Diagrama do pipeline
 
-![Diagrama do pipeline](docs/diagrama_pipeline.svg)
+![Diagrama do pipeline](https://raw.githubusercontent.com/FIAP-GS-02-2026/citizen-assist-ai-prompt/main/docs/diagrama_pipeline.svg)
 
 ```
 documentos .md ─▶ filtro de injeção ─▶ chunk (1000/150) ─▶ embeddings (nomic) ─▶ índice ChromaDB
@@ -92,14 +92,14 @@ e olhando a data:
 
 | | |
 |---|---|
-| ![Interface com fontes e ferramentas](docs/prints/05_interface_agente.png) Pergunta composta: o agente chama `verificar_gratuidade` e `consultar_status_ponto` e mostra as fontes | ![Interface RAG](docs/prints/05_interface_rag.png) Detalhe escondido (doc_01) respondido com a fonte |
-| ![URL pública](docs/prints/05_url_publica.png) URL pública do Gradio gerada no Colab | ![Trace](docs/prints/04_trace_composta.png) Trace thought → action → observation |
-| ![Guardrail 1](docs/prints/06_guardrail_1_escopo.png) Guardrail 1 · fora do escopo | ![Guardrail 2](docs/prints/06_guardrail_2_injecao.png) Guardrail 2 · injeção na pergunta |
-| ![Guardrail 3](docs/prints/06_guardrail_3_lgpd.png) Guardrail 3 · LGPD | ![Guardrail 4](docs/prints/06_guardrail_4_nao_sei.png) Guardrail 4 · "não sei" |
-| ![Injeção na fonte](docs/prints/06_injecao_na_fonte.png) Injeção plantada no doc_04: filtrada e ignorada | ![Bateria](docs/prints/06_bateria_sondas.png) Bateria de 30 sondas |
-| ![Busca com distance](docs/prints/02_query_distance.png) Busca com `distance` | ![RAGAS](docs/prints/07_ragas_comparativo.png) Tabela do RAGAS |
+| ![Interface com fontes e ferramentas](https://raw.githubusercontent.com/FIAP-GS-02-2026/citizen-assist-ai-prompt/main/docs/prints/05_interface_agente.png) Pergunta composta: o agente chama `verificar_gratuidade` e `consultar_status_ponto` e mostra as fontes | ![Interface RAG](https://raw.githubusercontent.com/FIAP-GS-02-2026/citizen-assist-ai-prompt/main/docs/prints/05_interface_rag.png) Detalhe escondido (doc_01) respondido com a fonte |
+| ![URL pública](https://raw.githubusercontent.com/FIAP-GS-02-2026/citizen-assist-ai-prompt/main/docs/prints/05_url_publica.png) URL pública do Gradio gerada no Colab | ![Trace](https://raw.githubusercontent.com/FIAP-GS-02-2026/citizen-assist-ai-prompt/main/docs/prints/04_trace_composta.png) Trace thought → action → observation |
+| ![Guardrail 1](https://raw.githubusercontent.com/FIAP-GS-02-2026/citizen-assist-ai-prompt/main/docs/prints/06_guardrail_1_escopo.png) Guardrail 1 · fora do escopo | ![Guardrail 2](https://raw.githubusercontent.com/FIAP-GS-02-2026/citizen-assist-ai-prompt/main/docs/prints/06_guardrail_2_injecao.png) Guardrail 2 · injeção na pergunta |
+| ![Guardrail 3](https://raw.githubusercontent.com/FIAP-GS-02-2026/citizen-assist-ai-prompt/main/docs/prints/06_guardrail_3_lgpd.png) Guardrail 3 · LGPD | ![Guardrail 4](https://raw.githubusercontent.com/FIAP-GS-02-2026/citizen-assist-ai-prompt/main/docs/prints/06_guardrail_4_nao_sei.png) Guardrail 4 · "não sei" |
+| ![Injeção na fonte](https://raw.githubusercontent.com/FIAP-GS-02-2026/citizen-assist-ai-prompt/main/docs/prints/06_injecao_na_fonte.png) Injeção plantada no doc_04: filtrada e ignorada | ![Bateria](https://raw.githubusercontent.com/FIAP-GS-02-2026/citizen-assist-ai-prompt/main/docs/prints/06_bateria_sondas.png) Bateria de 30 sondas |
+| ![Busca com distance](https://raw.githubusercontent.com/FIAP-GS-02-2026/citizen-assist-ai-prompt/main/docs/prints/02_query_distance.png) Busca com `distance` | ![RAGAS](https://raw.githubusercontent.com/FIAP-GS-02-2026/citizen-assist-ai-prompt/main/docs/prints/07_ragas_comparativo.png) Tabela do RAGAS |
 
-Outros prints da execução: `docs/prints/` (chunking, coleção ChromaDB, limite de confiança, erro controlado, custo, JSON).
+Outros prints da execução: [`docs/prints/`](https://github.com/FIAP-GS-02-2026/citizen-assist-ai-prompt/tree/main/docs/prints) (chunking, coleção ChromaDB, limite de confiança, erro controlado, custo, JSON).
 
 ## Como executar
 

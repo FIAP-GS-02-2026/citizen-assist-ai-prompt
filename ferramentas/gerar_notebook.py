@@ -54,6 +54,8 @@ md("""
 |---|---|
 | Turma | 1CCR |
 | Modalidade | Individual. Mantive o escopo completo: 8 perguntas no RAGAS (o mínimo individual é 3 + 3), 4 guardrails e documento extra |
+| Divisão de tarefas | Entrega individual: base documental, RAG, agente, Gradio, guardrails, RAGAS, README e vídeo foram feitos por mim |
+| Como executar | Chave grátis em console.groq.com/keys → Secrets do Colab como `GROQ_API_KEY` → Run all. As saídas desta execução já estão salvas no notebook |
 | Frente de cidadania | A · Mobilidade urbana |
 | Aluno | Glauco Kelly (RM 572840) |
 | Provedor do LLM | Groq, plano grátis (um dos provedores do laboratório de inferência da disciplina). A Ollama Cloud deixou de ter cota grátis (erro 402); se houver `OLLAMA_API_KEY` nos Secrets e nenhuma `GROQ_API_KEY`, o notebook usa `ChatOllama` na Ollama Cloud |
